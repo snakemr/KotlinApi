@@ -1,0 +1,21 @@
+CREATE TABLE users (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+name TEXT NOT NULL
+);
+
+CREATE INDEX user_name ON users(name);
+
+INSERT INTO users VALUES (1, 'Иван Петров');
+
+allUsers:
+SELECT * FROM users;
+
+user:
+SELECT * FROM users WHERE id=?;
+
+insert:
+INSERT INTO users(name)
+VALUES (?);
+
+insertObject:
+INSERT INTO users VALUES ?;
