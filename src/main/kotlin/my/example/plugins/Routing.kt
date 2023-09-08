@@ -3,7 +3,6 @@ package my.example.plugins
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
-import io.ktor.server.html.respondHtml
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
@@ -29,13 +28,13 @@ fun Application.configureRouting() {
             }
         }
 
-        // При обращении к /users выдаёт полный список пользователей в виде JSON
+        // При обращении к /users выдаётся полный список пользователей в виде JSON
         get("users") {
             val users = database.usersQueries.allUsers().executeAsList()
             call.respond(users)
         }
 
-        // При отправке поля "name" на адрес /add добавляет пользователя в таблицу
+        // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
         post("add") {
             val name = call.receiveParameters()["name"] ?: return@post
             database.usersQueries.insert(name)
