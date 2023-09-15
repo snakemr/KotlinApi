@@ -26,6 +26,7 @@ fun Application.configureRouting() {
                 database.userQueries.allUsers().executeAsList()
                 call.respondText("""API готов к работе.
                     |GET users: Вывод всех пользователей (json)
+                    |GET user/№: Вывод пользователя № (json)
                     |POST add: Добавить пользователя (поле name)
                     |POST new: Добавить пользователя (json)
                     |DELETE user/№: Удалить пользователя №

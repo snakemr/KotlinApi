@@ -14,8 +14,7 @@ user:
 SELECT * FROM user WHERE id=?;
 
 insert:
-INSERT INTO user(name)
-VALUES (?);
+INSERT INTO user(name) VALUES (?);
 
 add:
 INSERT INTO user VALUES ?;
