@@ -23,7 +23,7 @@ fun Application.configureRouting() {
         // При первом обращении к корню / сервиса создаётся база данных
         get("/") {
             try {
-                database.userQueries.allUsers().executeAsList()
+                database.userQueries.all().executeAsList()
                 call.respondText("""API готов к работе.
                     |GET users: Вывод всех пользователей (json)
                     |GET user/№: Вывод пользователя № (json)
@@ -39,7 +39,7 @@ fun Application.configureRouting() {
 
         // При обращении к /users выдаётся полный список пользователей в виде JSON
         get("users") {
-            val users = database.userQueries.allUsers().executeAsList()
+            val users = database.userQueries.all().executeAsList()
             call.respond(users)
         }
 

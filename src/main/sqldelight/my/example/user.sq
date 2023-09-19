@@ -7,7 +7,7 @@ CREATE INDEX user_name ON user(name);
 
 INSERT INTO user VALUES (1, 'Иван Петров');
 
-allUsers:
+all:
 SELECT * FROM user;
 
 user:
