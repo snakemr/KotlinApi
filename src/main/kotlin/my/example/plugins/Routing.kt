@@ -24,13 +24,7 @@ fun Application.configureRouting() {
         get("/") {
             try {
                 database.modelQueries.all().executeAsList()
-                call.respondText("""API готов к работе.
-                    |GET models: Вывод всех моделей (json)
-                    |GET model/№: Вывод модели № (json)
-                    |POST add: Добавить пользователя (поле name)
-                    |POST new: Добавить пользователя (json)
-                    |DELETE user/№: Удалить пользователя №
-                """.trimMargin())
+                call.respondText("API готов к работе")
             } catch (_: Exception) {
                 Database.Schema.create(driver)
                 call.respondText("База данных успешно создана")
