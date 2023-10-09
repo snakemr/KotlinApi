@@ -1,0 +1,30 @@
+CREATE TABLE model (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL DEFAULT 0,
+    image TEXT DEFAULT NULL,
+    ship INTEGER NOT NULL DEFAULT 0,
+    info TEXT DEFAULT NULL
+);
+
+CREATE INDEX model_name ON model(name);
+
+INSERT INTO model(name, price, image, ship, info) VALUES
+('Millennium Falcon', 5000000, 'millenniumfalconspacecraftc4dmodel000.jpg', 1,"The Millennium Falcon Spacecraft is designed by Joe Johnston for the movie Star Wars. In the 'Star Wars' universe, the Millennium Falcon is heralded as the coolest ship around. The Millennium Falcon's signature speed comes from its hyperdrive, a propulsion system that pushes the vessel to light speed. The hyperdrive functions by using 'hypermatter particles' to send the craft into hyperspace, an alternative dimension reached by traveling at or beyond the speed of light."),
+('AT-AT Walker', 1500000, 'walkatatstarwarsmb3dmodel000.jpg', 0, "Dirty All Terrain Armored Transport (AT-AT walker), which is a large four-legged combat vehicle used by the Imperial ground forces. Unclean science fiction type (imaginary) AT-AT vehicle in sci-fi style, which is a very large four-legged walker in Star Wars films, and which is an large, imposing, heavily armored vehicle which is used for ground assault. Aged science fiction (imaginary) AT-AT vehicle (transport), which has a tall body mounted on four tall but sturdy legs, with weapons like science fiction blasters."),
+('X-Wing Starfighter', 3000000, 'starwarsxwingstarfighterandr2d2red3dmodels00.jpg', 1, "Star Wars X-Wing Starfighter and R2D2 Red 2 is a versatile set of 2 high quality, photo real models that will enhance detail and realism to any of your rendering projects. The model has a fully textured, detailed design that allows for close-up renders, and was originally modeled in 3ds Max 2012 and rendered with V-Ray.");
+
+all:
+SELECT * FROM model;
+
+model:
+SELECT * FROM model WHERE id=?;
+
+insert:
+INSERT INTO model(name) VALUES (?);
+
+add:
+INSERT INTO model VALUES ?;
+
+delete:
+DELETE FROM model WHERE id=?;

@@ -1,23 +1,23 @@
 CREATE TABLE user (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT NOT NULL
+    name TEXT NOT NULL PRIMARY KEY,
+    pass TEXT NOT NULL,
+    money INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX user_name ON user(name);
 
-INSERT INTO user VALUES (1, 'Иван Петров');
+INSERT INTO user(name, pass, money) VALUES
+('vader', 'qwerty', 1000000000),
+('luke', '12345', 3000000),
+('leia', '12345', 200000000),
+('solo', '111', 10000),
+('chewbacca', '', 0);
 
-all:
-SELECT * FROM user;
+money:
+SELECT money FROM user WHERE name=?;
 
-user:
-SELECT * FROM user WHERE id=?;
+pass:
+SELECT pass FROM user WHERE name=?;
 
-insert:
-INSERT INTO user(name) VALUES (?);
-
-add:
-INSERT INTO user VALUES ?;
-
-delete:
-DELETE FROM user WHERE id=?;
+minus:
+UPDATE user SET money = money-? WHERE name=?;

@@ -1,0 +1,27 @@
+CREATE TABLE cart (
+    user TEXT NOT NULL,
+    model INTEGER NOT NULL,
+    amount INTEGER NOT NULL,
+    PRIMARY KEY  (user, model)
+);
+
+models:
+SELECT model FROM cart WHERE user=?;
+
+amount:
+SELECT amount FROM cart WHERE user=? AND model=?;
+
+add:
+INSERT INTO cart VALUES (?, ?, ?);
+
+remove:
+DELETE FROM cart WHERE user=? AND model=?;
+
+clear:
+DELETE FROM cart WHERE user=?;
+
+cart:
+SELECT SUM(model.price * amount) cost FROM
+cart LEFT JOIN model ON cart.model=model.id
+WHERE user=?;
+

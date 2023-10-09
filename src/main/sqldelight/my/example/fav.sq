@@ -1,0 +1,17 @@
+CREATE TABLE fav (
+    user TEXT NOT NULL,
+    model INTEGER NOT NULL,
+    PRIMARY KEY  (user, model)
+);
+
+faves:
+SELECT model FROM fav WHERE user=?;
+
+fav:
+SELECT model FROM fav WHERE user=? AND model=?;
+
+fave:
+INSERT INTO fav VALUES (?, ?);
+
+unfave:
+DELETE FROM fav WHERE user=? AND model=?;
