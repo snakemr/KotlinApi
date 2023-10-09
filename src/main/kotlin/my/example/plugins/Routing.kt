@@ -44,13 +44,14 @@ fun Application.configureRouting() {
             if (model != null) call.respond(model)
         }
 
-        // При обращении к /fav/№ выдаётся список id моделей в виде JSON
+        // При обращении к /fav/имя выдаётся список id избранных моделей в виде JSON
         get("faves/{name}") {
             val name = call.parameters["name"] ?: return@get
             val faves = database.favQueries.faves(name).executeAsList()
             call.respond(faves)
         }
 
+        // При отправке имени и пароля на /fav/№ модель добавляется/удаляется в избранное
         post("fav/{id}") {
             val id = call.parameters["id"]?.toLongOrNull() ?: return@post
             val form = call.receiveParameters()
@@ -66,14 +67,14 @@ fun Application.configureRouting() {
             call.respondText("ok")
         }
 
-        // При обращении к /cart/№ выдаётся список id моделей в виде JSON
+        // При обращении к /cart/№ выдаётся список id моделей в корзине в виде JSON
         get("cart/{name}") {
             val name = call.parameters["name"] ?: return@get
             val cart = database.cartQueries.models(name).executeAsList()
             call.respond(cart)
         }
 
-        // При обращении к /cart/№/№ выдаётся количество заказанных экземпляров
+        // При обращении к /cart/имя/№ выдаётся количество заказанных экземпляров модели
         get("cart/{name}/{id}") {
             val name = call.parameters["name"] ?: return@get
             val id = call.parameters["id"]?.toLongOrNull() ?: return@get
@@ -81,6 +82,7 @@ fun Application.configureRouting() {
             call.respond(amount ?: 0L)
         }
 
+        // При отправке имени, пароля и количества на /cart/№ модель добавляется/удаляется в корзину
         post("cart/{id}") {
             val id = call.parameters["id"]?.toLongOrNull() ?: return@post
             val form = call.receiveParameters()
@@ -94,20 +96,21 @@ fun Application.configureRouting() {
             call.respondText("ok")
         }
 
-        // При обращении к /cost/№ выдаётся сумма заказа
+        // При обращении к /cost/имя выдаётся сумма заказа
         get("cost/{name}") {
             val name = call.parameters["name"] ?: return@get
             val cost = database.cartQueries.cart(name).executeAsOneOrNull()?.cost?.toLong() ?: 0
             call.respond(cost)
         }
 
-        // При обращении к /money/№ выдаётся сумма на счету пользователя
+        // При обращении к /money/имя выдаётся сумма на счету пользователя
         get("money/{name}") {
             val name = call.parameters["name"] ?: return@get
             val money = database.userQueries.money(name).executeAsOneOrNull()
             if (money != null) call.respond(money)
         }
 
+        // При отправке имени и пароля на /buy производится покупка товаров в корзине
         post("buy") {
             val form = call.receiveParameters()
             val name = form["name"] ?: return@post
@@ -116,13 +119,14 @@ fun Application.configureRouting() {
             if (pas1 != pas2) return@post
             val money = database.userQueries.money(name).executeAsOneOrNull() ?: 0
             val cost = database.cartQueries.cart(name).executeAsOneOrNull()?.cost?.toLong() ?: 0
-            if (cost > 0 && cost < money) {
+            if (cost in 1..money) {
                 database.userQueries.minus(cost, name)
                 database.cartQueries.clear(name)
                 call.respondText("ok")
             }
         }
 
+        // При отправке имени и пароля на /login производится их проверка и вход в систему
         post("login") {
             val form = call.receiveParameters()
             val name = form["name"] ?: return@post
@@ -133,28 +137,6 @@ fun Application.configureRouting() {
             else
                 call.respond(HttpStatusCode.Forbidden)
         }
-
-
-//        // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
-//        post("add") {
-//            val name = call.receiveParameters()["name"] ?: return@post
-//            database.modelQueries.insert(name)
-//            call.respondText("Пользователь добавлен")
-//        }
-//
-//        // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
-//        post("new") {
-//            val user = call.receive<Model>()
-//            database.modelQueries.add(user)
-//            call.respondText("Пользователь добавлен")
-//        }
-//
-//        // При запросе удаления по адресу /user/№ пользователь удаляется из таблицы
-//        delete("user/{id}") {
-//            val id = call.parameters["id"]?.toLongOrNull() ?: return@delete
-//            database.modelQueries.delete(id)
-//            call.respondText("Пользователь удалён")
-//        }
 
         staticFiles("/images", File("images"))
     }
