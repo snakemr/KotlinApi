@@ -5,7 +5,7 @@ val sqlite_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.10"
-    id("io.ktor.plugin") version "2.3.4"
+    id("io.ktor.plugin") version "2.3.5"
     id("app.cash.sqldelight") version "2.0.0"
 }
 
@@ -28,15 +28,15 @@ kotlin {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core-jvm")
-    implementation("io.ktor:ktor-server-host-common-jvm")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm")
-    implementation("io.ktor:ktor-serialization-gson-jvm")
-    implementation("io.ktor:ktor-server-html-builder-jvm")
-    implementation("io.ktor:ktor-server-netty-jvm")
+    implementation("io.ktor:ktor-server-core-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-host-common-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktor_version")
+    implementation("io.ktor:ktor-serialization-gson-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-html-builder-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
     implementation("app.cash.sqldelight:sqlite-driver:$sqlite_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
-    testImplementation("io.ktor:ktor-server-tests-jvm")
+    testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
 
