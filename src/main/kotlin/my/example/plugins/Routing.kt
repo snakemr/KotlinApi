@@ -27,6 +27,7 @@ fun Application.configureRouting() {
                 call.respondText("""API готов к работе.
                     |GET users: Вывод всех пользователей (json)
                     |GET user/№: Вывод пользователя № (json)
+                    |GET name?id=№: Вывод имени пользователя №
                     |POST add: Добавить пользователя (поле name)
                     |POST new: Добавить пользователя (json)
                     |DELETE user/№: Удалить пользователя №
