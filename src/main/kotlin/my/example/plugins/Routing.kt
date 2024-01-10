@@ -50,6 +50,13 @@ fun Application.configureRouting() {
             if (user != null) call.respond(user)
         }
 
+        // При обращении к /name?id=№ выдаётся имя пользователя
+        get("name") {
+            val id = call.request.queryParameters["id"]?.toLongOrNull() ?: return@get
+            val user = database.userQueries.user(id).executeAsOneOrNull()
+            if (user != null) call.respondText(user.name)
+        }
+
         // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
         post("add") {
             val name = call.receiveParameters()["name"] ?: return@post
