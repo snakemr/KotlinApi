@@ -99,7 +99,7 @@ fun Application.configureRouting() {
         // При обращении к /cost/имя выдаётся сумма заказа
         get("cost/{name}") {
             val name = call.parameters["name"] ?: return@get
-            val cost = database.cartQueries.cart(name).executeAsOneOrNull()?.cost?.toLong() ?: 0
+            val cost = database.cartQueries.cost(name).executeAsOneOrNull()?.cost?.toLong() ?: 0
             call.respond(cost)
         }
 
@@ -118,7 +118,7 @@ fun Application.configureRouting() {
             val pas2 = database.userQueries.pass(name).executeAsOneOrNull()
             if (pas1 != pas2) return@post
             val money = database.userQueries.money(name).executeAsOneOrNull() ?: 0
-            val cost = database.cartQueries.cart(name).executeAsOneOrNull()?.cost?.toLong() ?: 0
+            val cost = database.cartQueries.cost(name).executeAsOneOrNull()?.cost?.toLong() ?: 0
             if (cost in 1..money) {
                 database.userQueries.minus(cost, name)
                 database.cartQueries.clear(name)
