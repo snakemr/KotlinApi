@@ -13,6 +13,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import my.example.Database
+import my.example.Logon
 import my.example.User
 import java.util.UUID
 
@@ -59,9 +60,10 @@ fun Application.configureRouting() {
                 return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
             val user = database.userQueries.login(email).executeAsOneOrNull()?.takeIf { it.pass == pass } ?:
                 return@post call.respond(HttpStatusCode.Unauthorized, "Email or password is incorrect")
-            val token = UUID.randomUUID()
-            //database.userQueries.insert(name, email, phone, pass)
-            call.respond(token)
+            val token = UUID.randomUUID().toString()
+            database.logonQueries.login(email, user.id, token)
+            //call.respondText("Пользователь $token зарегистрирован")
+            call.respond(Logon(email, user.id, token))
         }
 
         // При обращении к /user/№ выдаётся объект "пользователь" виде JSON
