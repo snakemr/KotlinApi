@@ -1,11 +1,13 @@
 CREATE TABLE user (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT NOT NULL
+name TEXT NOT NULL,
+email TEXT NOT NULL,
+phone TEXT NOT NULL,
+pass TEXT NOT NULL
 );
 
+CREATE UNIQUE INDEX user_email ON user(email);
 CREATE INDEX user_name ON user(name);
-
-INSERT INTO user VALUES (1, 'Иван Петров');
 
 all:
 SELECT * FROM user;
@@ -14,10 +16,13 @@ user:
 SELECT * FROM user WHERE id=?;
 
 insert:
-INSERT INTO user(name) VALUES (?);
+INSERT INTO user(name, email, phone, pass) VALUES (?,?,?,?);
 
 add:
 INSERT INTO user VALUES ?;
 
 delete:
 DELETE FROM user WHERE id=?;
+
+login:
+SELECT * FROM user WHERE email=?;

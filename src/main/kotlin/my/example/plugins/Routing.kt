@@ -1,6 +1,7 @@
 package my.example.plugins
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.ktor.http.*
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -13,6 +14,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import my.example.Database
 import my.example.User
+import java.util.UUID
 
 fun Application.configureRouting() {
     val driver = JdbcSqliteDriver("jdbc:sqlite:database.s3db")
@@ -25,12 +27,7 @@ fun Application.configureRouting() {
             try {
                 database.userQueries.all().executeAsList()
                 call.respondText("""API готов к работе.
-                    |GET users: Вывод всех пользователей (json)
-                    |GET user/№: Вывод пользователя № (json)
-                    |GET name?id=№: Вывод имени пользователя №
-                    |POST add: Добавить пользователя (поле name)
-                    |POST new: Добавить пользователя (json)
-                    |DELETE user/№: Удалить пользователя №
+                    |POST register: Добавить пользователя (name, email, phone, pass)
                 """.trimMargin())
             } catch (_: Exception) {
                 Database.Schema.create(driver)
@@ -38,45 +35,68 @@ fun Application.configureRouting() {
             }
         }
 
-        // При обращении к /users выдаётся полный список пользователей в виде JSON
-        get("users") {
-            val users = database.userQueries.all().executeAsList()
-            call.respond(users)
+        post("register") {
+            val params = call.receiveParameters()
+            val name = params["name"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val phone = params["phone"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val pass = params["pass"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || pass.isEmpty()) {
+                return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
+            }
+            database.userQueries.login(email).executeAsOneOrNull()?.let {
+                return@post call.respond(HttpStatusCode.Conflict, "Email already registered")
+            }
+            database.userQueries.insert(name, email, phone, pass)
+            call.respondText("Пользователь зарегистрирован")
+        }
+
+        post("login") {
+            val params = call.receiveParameters()
+            val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val pass = params["pass"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            if (email.isEmpty() || pass.isEmpty())
+                return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
+            val user = database.userQueries.login(email).executeAsOneOrNull()?.takeIf { it.pass == pass } ?:
+                return@post call.respond(HttpStatusCode.Unauthorized, "Email or password is incorrect")
+            val token = UUID.randomUUID()
+            //database.userQueries.insert(name, email, phone, pass)
+            call.respond(token)
         }
 
         // При обращении к /user/№ выдаётся объект "пользователь" виде JSON
-        get("user/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull() ?: return@get
-            val user = database.userQueries.user(id).executeAsOneOrNull()
-            if (user != null) call.respond(user)
-        }
+//        get("user/{id}") {
+//            val id = call.parameters["id"]?.toLongOrNull() ?: return@get
+//            val user = database.userQueries.user(id).executeAsOneOrNull()
+//            if (user != null) call.respond(user)
+//        }
 
         // При обращении к /name?id=№ выдаётся имя пользователя
-        get("name") {
-            val id = call.request.queryParameters["id"]?.toLongOrNull() ?: return@get
-            val user = database.userQueries.user(id).executeAsOneOrNull()
-            if (user != null) call.respondText(user.name)
-        }
+//        get("name") {
+//            val id = call.request.queryParameters["id"]?.toLongOrNull() ?: return@get
+//            val user = database.userQueries.user(id).executeAsOneOrNull()
+//            if (user != null) call.respondText(user.name)
+//        }
 
         // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
-        post("add") {
-            val name = call.receiveParameters()["name"] ?: return@post
-            database.userQueries.insert(name)
-            call.respondText("Пользователь добавлен")
-        }
+//        post("add") {
+//            val name = call.receiveParameters()["name"] ?: return@post
+//            database.userQueries.insert(name)
+//            call.respondText("Пользователь добавлен")
+//        }
 
         // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
-        post("new") {
-            val user = call.receive<User>()
-            database.userQueries.add(user)
-            call.respondText("Пользователь добавлен")
-        }
+//        post("new") {
+//            val user = call.receive<User>()
+//            database.userQueries.add(user)
+//            call.respondText("Пользователь добавлен")
+//        }
 
         // При запросе удаления по адресу /user/№ пользователь удаляется из таблицы
-        delete("user/{id}") {
-            val id = call.parameters["id"]?.toLongOrNull() ?: return@delete
-            database.userQueries.delete(id)
-            call.respondText("Пользователь удалён")
-        }
+//        delete("user/{id}") {
+//            val id = call.parameters["id"]?.toLongOrNull() ?: return@delete
+//            database.userQueries.delete(id)
+//            call.respondText("Пользователь удалён")
+//        }
     }
 }

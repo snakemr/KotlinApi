@@ -14,21 +14,18 @@ Accept: text/plain
 DELETE http://localhost/user/999
 Accept: text/plain
 
-### POST new user name
-POST http://localhost/add
+### REGISTER user
+POST http://localhost/register
 Content-Type: application/x-www-form-urlencoded
 Accept: text/plain
 
-name = Сергей Сидоров
+name=Сергей Сидоров&email=sidorov@example.my&phone=792812345678&pass=qwerty
 
-### POST new user
-POST http://localhost/new
-Content-Type: application/json
+### LOGIN user
+POST http://localhost/login
+Content-Type: application/x-www-form-urlencoded
 Accept: text/plain
 
-{
-  "id": 999,
-  "name": "Пётр Иванов"
-}
+email=sidorov@example.my&pass=qwerty
 
 ###

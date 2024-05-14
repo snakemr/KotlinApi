@@ -1,0 +1,11 @@
+CREATE TABLE logon (
+email TEXT PRIMARY KEY AUTOINCREMENT,
+user INTEGER NOT NULL,
+token TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX logon_user ON logon(user);
+CREATE UNIQUE INDEX logon_token ON logon(token);
+
+insert:
+INSERT INTO logon(email, user, token) VALUES (?,?,?);
