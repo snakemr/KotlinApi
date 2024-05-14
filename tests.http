@@ -28,4 +28,25 @@ Accept: text/plain
 
 email=sidorov@example.my&pass=qwerty
 
+### FORGOT password
+POST http://localhost/forgot
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+email=sidorov@example.my
+
+### OTP for password
+POST http://localhost/otp
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+email=sidorov@example.my&otp=794201
+
+### SET NEW password
+POST http://localhost/password
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+email=sidorov@example.my&pass=qwerty
+
 ###

@@ -2,20 +2,13 @@ package my.example.plugins
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.http.*
-import io.ktor.server.application.Application
-import io.ktor.server.application.call
-import io.ktor.server.request.receive
-import io.ktor.server.request.receiveParameters
-import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.delete
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.routing
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import my.example.Database
-import my.example.Logon
-import my.example.User
-import java.util.UUID
+import java.util.*
+import kotlin.random.Random
 
 fun Application.configureRouting() {
     val driver = JdbcSqliteDriver("jdbc:sqlite:database.s3db")
@@ -62,8 +55,46 @@ fun Application.configureRouting() {
                 return@post call.respond(HttpStatusCode.Unauthorized, "Email or password is incorrect")
             val token = UUID.randomUUID().toString()
             database.logonQueries.login(email, user.id, token)
-            //call.respondText("Пользователь $token зарегистрирован")
-            call.respond(Logon(email, user.id, token))
+            database.forgotQueries.delete(email)
+            call.respond(token)
+        }
+
+        post("forgot") {
+            val email = call.receiveParameters()["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            if (email.isEmpty())
+                return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
+            database.userQueries.login(email).executeAsOneOrNull() ?:
+                return@post call.respond(HttpStatusCode.NotFound, "Email not registered")
+            val code = Random.nextLong(1_000_000)
+            database.forgotQueries.delete(email)
+            database.forgotQueries.add(email, code)
+            println("FORGOT PASSWORD: OTP CODE FOR $email = $code")
+            call.respondText("Your code is sent to your email")
+        }
+
+        post("otp") {
+            val params = call.receiveParameters()
+            val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val otp = params["otp"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+            if (email.isEmpty())
+                return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
+            database.forgotQueries.awaiting(email, otp).executeAsOneOrNull()
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, "Wrong OTP code")
+            database.forgotQueries.getready(email)
+            call.respondText("Awaiting a new password")
+        }
+
+        post("password") {
+            val params = call.receiveParameters()
+            val pass = params["pass"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val email = params["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            if (email.isEmpty() || pass.isEmpty())
+                return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
+            database.forgotQueries.ready(email).executeAsOneOrNull()
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, "OTP Verification required")
+            database.forgotQueries.delete(email)
+            database.userQueries.setpassword(pass, email)
+            call.respondText("New password is set")
         }
 
         // При обращении к /user/№ выдаётся объект "пользователь" виде JSON

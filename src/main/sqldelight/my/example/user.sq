@@ -12,17 +12,11 @@ CREATE INDEX user_name ON user(name);
 all:
 SELECT * FROM user;
 
-user:
-SELECT * FROM user WHERE id=?;
-
 insert:
 INSERT INTO user(name, email, phone, pass) VALUES (?,?,?,?);
 
-add:
-INSERT INTO user VALUES ?;
-
-delete:
-DELETE FROM user WHERE id=?;
-
 login:
 SELECT * FROM user WHERE email=?;
+
+setpassword:
+UPDATE user SET pass=? WHERE email=?;

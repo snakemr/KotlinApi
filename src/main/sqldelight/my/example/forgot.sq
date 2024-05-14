@@ -1,0 +1,19 @@
+CREATE TABLE forgot (
+email TEXT PRIMARY KEY,
+otp INTEGER NOT NULL
+);
+
+add:
+INSERT INTO forgot VALUES (?,?);
+
+delete:
+DELETE FROM forgot WHERE email=?;
+
+awaiting:
+SELECT * FROM forgot WHERE email=? AND otp=?;
+
+ready:
+SELECT * FROM forgot WHERE email=? AND otp=-1;
+
+getready:
+UPDATE forgot SET otp=-1 WHERE email=?;
