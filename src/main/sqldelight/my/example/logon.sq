@@ -11,3 +11,9 @@ login {
 DELETE FROM logon WHERE email=:email;
 INSERT INTO logon(email, user, token) VALUES (:email,:id,:token);
 }
+
+logout:
+DELETE FROM logon WHERE token=?;
+
+user:
+SELECT user FROM logon WHERE token=?;

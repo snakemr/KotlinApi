@@ -28,6 +28,13 @@ Accept: text/plain
 
 email=sidorov@example.my&pass=qwerty
 
+### LOGOUT user
+POST http://localhost/logout
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+token=e9756f0d-1e7f-44db-9d46-b873b3dcc3c1
+
 ### FORGOT password
 POST http://localhost/forgot
 Content-Type: application/x-www-form-urlencoded

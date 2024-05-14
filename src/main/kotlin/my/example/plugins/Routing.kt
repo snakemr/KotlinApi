@@ -59,6 +59,17 @@ fun Application.configureRouting() {
             call.respond(token)
         }
 
+        post("logout") {
+            val params = call.receiveParameters()
+            val token = params["token"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            if (token.isEmpty())
+                return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
+            database.logonQueries.user(token).executeAsOneOrNull()
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, "Authorization required")
+            database.logonQueries.logout(token)
+            call.respondText("You are logged out")
+        }
+
         post("forgot") {
             val email = call.receiveParameters()["email"] ?: return@post call.respond(HttpStatusCode.BadRequest)
             if (email.isEmpty())
