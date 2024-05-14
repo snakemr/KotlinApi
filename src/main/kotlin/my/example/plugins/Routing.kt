@@ -6,7 +6,10 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
+import io.ktor.util.pipeline.*
 import my.example.Database
+import my.example.Session
 import java.util.*
 import kotlin.random.Random
 
@@ -22,6 +25,13 @@ fun Application.configureRouting() {
                 database.userQueries.all().executeAsList()
                 call.respondText("""API готов к работе.
                     |POST register: Добавить пользователя (name, email, phone, pass)
+                    |POST login: Авторизация пользователя (email, pass)
+                    |POST logout: Выход пользователя (token)
+                    |POST forgot: Отправка кода сброса пароля (email) - см. вывод в консоли  
+                    |POST otp: Код подтверждения (email, otp) после forgot
+                    |POST password: Установка пароля (email, pass) после otp
+                    |POST balance: Запрос баланса (token)
+                    |POST delivery: Доставка json: { track, weight, worth, origin: {...}, destinations: [{...}] }
                 """.trimMargin())
             } catch (_: Exception) {
                 Database.Schema.create(driver)
@@ -51,22 +61,22 @@ fun Application.configureRouting() {
             val pass = params["pass"] ?: return@post call.respond(HttpStatusCode.BadRequest)
             if (email.isEmpty() || pass.isEmpty())
                 return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
-            val user = database.userQueries.login(email).executeAsOneOrNull()?.takeIf { it.pass == pass } ?:
-                return@post call.respond(HttpStatusCode.Unauthorized, "Email or password is incorrect")
+            val user = database.userQueries.login(email).executeAsOneOrNull()?.takeIf { it.pass == pass }
+                ?: return@post call.respond(HttpStatusCode.Unauthorized, "Email or password is incorrect")
             val token = UUID.randomUUID().toString()
             database.logonQueries.login(email, user.id, token)
             database.forgotQueries.delete(email)
-            call.respond(token)
+            call.sessions.set(Session(token))
+            call.respondText("You are logged in")
+            //call.respond(token)
         }
 
         post("logout") {
-            val params = call.receiveParameters()
-            val token = params["token"] ?: return@post call.respond(HttpStatusCode.BadRequest)
-            if (token.isEmpty())
-                return@post call.respond(HttpStatusCode.BadRequest, "Required parameter is empty")
-            database.logonQueries.user(token).executeAsOneOrNull()
-                ?: return@post call.respond(HttpStatusCode.Unauthorized, "Authorization required")
+//            val token = call.receiveParameters()["token"]?.takeIf { it.isNotEmpty() }
+//                ?: return@post call.respond(HttpStatusCode.BadRequest, "Token is empty")
+            val token = getAuth(database) ?: return@post
             database.logonQueries.logout(token)
+            call.sessions.clear<Session>()
             call.respondText("You are logged out")
         }
 
@@ -108,6 +118,40 @@ fun Application.configureRouting() {
             call.respondText("New password is set")
         }
 
+        get("balance") {
+//            val token = call.receiveParameters()["token"]?.takeIf { it.isNotEmpty() }
+//                ?: return@post call.respond(HttpStatusCode.BadRequest, "Token is empty")
+            val token = getAuth(database) ?: return@get
+            val balance = database.logonQueries.balance(token).executeAsOneOrNull()?.balance
+                ?: return@get call.respond(HttpStatusCode.NotFound, "User not found")
+            call.respond(balance)
+        }
+
+        post("delivery") {
+            getAuth(database) ?: return@post
+            val delivery = call.receive<Delivery>()
+            val track = delivery.track.takeIf { it.isNotEmpty() } ?: "R-${UUID.randomUUID()}"
+            with(delivery) {
+                database.packageQueries.insert(track, weight, worth).executeAsOne()
+            }
+            with(delivery.origin) {
+                database.addressQueries.insert(address, state, phone, others, track).executeAsOne()
+            }
+            delivery.destinations.forEach {
+                database.addressQueries.insert(it.address, it.state, it.phone, it.others, track).executeAsOne()
+            }
+            call.respond(track)
+        }
+
+        get("delivery/{id}") {
+            getAuth(database) ?: return@get
+            val track = call.parameters["id"] ?: return@get
+            val pack = database.packageQueries.get(track).executeAsOneOrNull() ?: return@get
+            val address = database.addressQueries.get(track).executeAsList().takeIf { it.isNotEmpty() } ?: return@get
+            val delivery = Delivery(pack.track, pack.weight, pack.worth, address.first(), address.drop(1))
+            call.respond(delivery)
+        }
+
         // При обращении к /user/№ выдаётся объект "пользователь" виде JSON
 //        get("user/{id}") {
 //            val id = call.parameters["id"]?.toLongOrNull() ?: return@get
@@ -143,4 +187,16 @@ fun Application.configureRouting() {
 //            call.respondText("Пользователь удалён")
 //        }
     }
+}
+
+private suspend fun PipelineContext<Unit, ApplicationCall>.getAuth(database: Database): String? {
+    val token = call.sessions.get<Session>()?.token?.takeIf { it.isNotEmpty() } ?: run {
+        call.respond(HttpStatusCode.Unauthorized, "Session token is empty")
+        return null
+    }
+    database.logonQueries.user(token).executeAsOneOrNull() ?: run {
+        call.respond(HttpStatusCode.Unauthorized, "Bad authorization token")
+        return null
+    }
+    return token
 }

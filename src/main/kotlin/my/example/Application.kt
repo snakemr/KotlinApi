@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.sessions.*
 import my.example.plugins.*
 
 fun main() {
@@ -13,6 +14,9 @@ fun main() {
 }
 
 fun Application.module() {
+    install(Sessions) {
+        cookie<Session>("Session")
+    }
     install(ContentNegotiation) {
         gson {
             setPrettyPrinting()
@@ -20,3 +24,5 @@ fun Application.module() {
     }
     configureRouting()
 }
+
+data class Session(val token: String?)

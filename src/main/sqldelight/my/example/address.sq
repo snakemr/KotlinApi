@@ -1,0 +1,18 @@
+CREATE TABLE address (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+address TEXT NOT NULL,
+state TEXT NOT NULL,
+phone TEXT NOT NULL,
+others TEXT DEFAULT NULL,
+package TEXT DEFAULT NULL
+);
+
+CREATE INDEX address_package ON address(package);
+
+insert {
+INSERT INTO address(address, state, phone, others, package) VALUES (?,?,?,?,?);
+SELECT last_insert_rowid();
+}
+
+get:
+SELECT * FROM address WHERE package=? ORDER BY id;

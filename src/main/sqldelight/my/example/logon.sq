@@ -17,3 +17,6 @@ DELETE FROM logon WHERE token=?;
 
 user:
 SELECT user FROM logon WHERE token=?;
+
+balance:
+SELECT balance FROM logon LEFT JOIN user ON logon.user=user.id WHERE token=?;

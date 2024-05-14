@@ -1,0 +1,13 @@
+CREATE TABLE package (
+track TEXT PRIMARY KEY,
+weight REAL NOT NULL,
+worth REAL NOT NULL
+);
+
+insert {
+INSERT INTO package VALUES (?,?,?);
+SELECT last_insert_rowid();
+}
+
+get:
+SELECT * FROM package WHERE track=?;
