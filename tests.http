@@ -71,4 +71,24 @@ Accept: text/plain
 GET http://localhost/delivery/R-4681c24a-ee38-4935-904c-0b4855bcb899
 Accept: application/json
 
+### ALL MESSAGES
+GET http://localhost/chat
+Accept: application/json
+
+### MESSAGES
+GET http://localhost/chat/1
+Accept: application/json
+
+### SEND MESSAGE
+POST http://localhost/chat/1
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+message=Привет!!!
+
+### SEEN MESSAGE
+POST http://localhost/chat/seen/1
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
 ###

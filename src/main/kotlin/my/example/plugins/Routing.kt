@@ -25,13 +25,18 @@ fun Application.configureRouting() {
                 database.userQueries.all().executeAsList()
                 call.respondText("""API готов к работе.
                     |POST register: Добавить пользователя (name, email, phone, pass)
-                    |POST login: Авторизация пользователя (email, pass)
-                    |POST logout: Выход пользователя (token)
+                    |POST login: Авторизация пользователя (email, pass) → cookie Session token
                     |POST forgot: Отправка кода сброса пароля (email) - см. вывод в консоли  
                     |POST otp: Код подтверждения (email, otp) после forgot
                     |POST password: Установка пароля (email, pass) после otp
-                    |POST balance: Запрос баланса (token)
+                    |далее требуется авторизация (cookie Session token=...)
+                    |POST logout: Выход пользователя
+                    |POST balance: Запрос баланса
                     |POST delivery: Доставка json: { track, weight, worth, origin: {...}, destinations: [{...}] }
+                    |GET chat: Все последние сообщения в чатах
+                    |GET chat/№: Все сообщения в чате с пользователем id с указанием непросмотренных
+                    |POST chat/№: Отправить сообщение пользователю id (message)
+                    |POST chat/seen/№: Отметить сообщение id просмотренным
                 """.trimMargin())
             } catch (_: Exception) {
                 Database.Schema.create(driver)
@@ -52,7 +57,7 @@ fun Application.configureRouting() {
                 return@post call.respond(HttpStatusCode.Conflict, "Email already registered")
             }
             database.userQueries.insert(name, email, phone, pass)
-            call.respondText("Пользователь зарегистрирован")
+            call.respondText("User registered")
         }
 
         post("login") {
@@ -152,40 +157,39 @@ fun Application.configureRouting() {
             call.respond(delivery)
         }
 
-        // При обращении к /user/№ выдаётся объект "пользователь" виде JSON
-//        get("user/{id}") {
-//            val id = call.parameters["id"]?.toLongOrNull() ?: return@get
-//            val user = database.userQueries.user(id).executeAsOneOrNull()
-//            if (user != null) call.respond(user)
-//        }
+        post("chat/seen/{id}") {
+            val token = getAuth(database) ?: return@post
+            val recipient = database.logonQueries.user(token).executeAsOneOrNull() ?: return@post
+            val id = call.parameters["id"]?.toLongOrNull() ?: return@post
+            database.chatQueries.seen(id, recipient)
+            call.respond(HttpStatusCode.OK)
+        }
 
-        // При обращении к /name?id=№ выдаётся имя пользователя
-//        get("name") {
-//            val id = call.request.queryParameters["id"]?.toLongOrNull() ?: return@get
-//            val user = database.userQueries.user(id).executeAsOneOrNull()
-//            if (user != null) call.respondText(user.name)
-//        }
+        post("chat/{id}") {
+            val token = getAuth(database) ?: return@post
+            val sender = database.logonQueries.user(token).executeAsOneOrNull() ?: return@post
+            val recipient = call.parameters["id"]?.toLongOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest)
+            val message = call.receiveParameters()["message"] ?: return@post call.respond(HttpStatusCode.BadRequest)
+            database.chatQueries.send(sender, recipient, message)
+            call.respond(HttpStatusCode.OK)
+        }
 
-        // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
-//        post("add") {
-//            val name = call.receiveParameters()["name"] ?: return@post
-//            database.userQueries.insert(name)
-//            call.respondText("Пользователь добавлен")
-//        }
+        get("chat/{id}") {
+            val token = getAuth(database) ?: return@get
+            val user = call.parameters["id"]?.toLongOrNull() ?: return@get
+            val messages = database.chatQueries.messages(token, user).executeAsList()
+            call.respond(messages)
+        }
 
-        // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
-//        post("new") {
-//            val user = call.receive<User>()
-//            database.userQueries.add(user)
-//            call.respondText("Пользователь добавлен")
-//        }
-
-        // При запросе удаления по адресу /user/№ пользователь удаляется из таблицы
-//        delete("user/{id}") {
-//            val id = call.parameters["id"]?.toLongOrNull() ?: return@delete
-//            database.userQueries.delete(id)
-//            call.respondText("Пользователь удалён")
-//        }
+        get("chat") {
+            val token = getAuth(database) ?: return@get
+            val user = database.logonQueries.user(token).executeAsOneOrNull() ?: return@get
+            val last = database.chatQueries.last(token).executeAsList()
+            val messages = database.chatQueries.all(user, last.mapNotNull { it.id }).executeAsList().map { chat ->
+                chat.copy(unseen = last.find { it.id==chat.id }?.unseen?.toLong() ?: 0)
+            }
+            call.respond(messages)
+        }
     }
 }
 

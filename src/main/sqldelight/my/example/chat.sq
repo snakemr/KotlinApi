@@ -1,0 +1,34 @@
+CREATE TABLE chat (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+sender INTEGER NOT NULL,
+recipient INTEGER NOT NULL,
+message TEXT NOT NULL,
+seen INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX chat_sender ON chat(sender);
+CREATE INDEX chat_recipient ON chat(recipient);
+
+send:
+INSERT INTO chat (sender, recipient, message) VALUES (?,?,?);
+
+messages:
+SELECT chat.* FROM logon
+LEFT JOIN user ON user.id=logon.user
+LEFT JOIN chat ON user.id=chat.sender OR user.id=chat.recipient
+WHERE logon.token=:token AND chat.sender=:user OR chat.recipient=:user;
+
+seen:
+UPDATE chat SET seen=1 WHERE id=:id AND recipient=:recipient;
+
+last:
+SELECT MAX(chat.id) id, SUM(seen=0 AND user.id=recipient) unseen FROM logon
+LEFT JOIN user ON user.id=logon.user
+LEFT JOIN chat ON user.id=sender OR user.id=recipient
+WHERE logon.token=:token
+GROUP BY CASE WHEN user.id=sender THEN recipient ELSE sender END;
+
+all:
+SELECT chat.id, sender, recipient, message, seen unseen, name FROM chat
+LEFT JOIN user ON user.id=sender OR user.id=recipient
+WHERE user.id<>:user AND chat.id IN :last;
