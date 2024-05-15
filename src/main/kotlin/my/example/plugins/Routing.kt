@@ -10,7 +10,9 @@ import io.ktor.server.sessions.*
 import io.ktor.util.pipeline.*
 import my.example.Database
 import my.example.Session
+import java.awt.Font
 import java.util.*
+import javax.swing.*
 import kotlin.random.Random
 
 fun Application.configureRouting() {
@@ -26,7 +28,7 @@ fun Application.configureRouting() {
                 call.respondText("""API готов к работе.
                     |POST register: Добавить пользователя (name, email, phone, pass)
                     |POST login: Авторизация пользователя (email, pass) → cookie Session token
-                    |POST forgot: Отправка кода сброса пароля (email) - см. вывод в консоли  
+                    |POST forgot: Отправка кода сброса пароля (email) - во всплывающем окне
                     |POST otp: Код подтверждения (email, otp) после forgot
                     |POST password: Установка пароля (email, pass) после otp
                     |далее требуется авторизация (cookie Session token=...)
@@ -94,8 +96,17 @@ fun Application.configureRouting() {
             val code = Random.nextLong(1_000_000)
             database.forgotQueries.delete(email)
             database.forgotQueries.add(email, code)
-            println("FORGOT PASSWORD: OTP CODE FOR $email = $code")
-            call.respondText("Your code is sent to your email")
+            JFrame("OTP code verification").apply {
+                JLabel("OPT code for $email: $code").apply {
+                    font = Font("Serif", Font.BOLD, 20)
+                    border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                }.let(::add)
+                pack()
+                isLocationByPlatform = true
+                isAlwaysOnTop = true
+                isVisible = true
+            }
+            call.respondText("Your code is \"sent\" to your \"email\"")
         }
 
         post("otp") {
