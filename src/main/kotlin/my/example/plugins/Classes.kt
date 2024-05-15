@@ -11,4 +11,17 @@ data class Delivery(
     val destinations: List<Address>
 )
 
-enum class Status { New, Processing, Sent, Delivered }
+data class Track(
+    val status: String,
+    val date: String?
+)
+
+enum class Status(val text: String) {
+    Created ("Just created"),
+    Processing ("Processing transaction"),
+    Successful ("Transaction successful"),
+    Courier ("Courier requested"),
+    Ready ("Package ready for delivery"),
+    Transit ("Package in transit"),
+    Delivered ("Package delivered")
+}

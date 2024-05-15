@@ -1,0 +1,14 @@
+CREATE TABLE tracking (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+track TEXT NOT NULL,
+status INTEGER NOT NULL,
+date TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX tracking_track ON tracking(track);
+
+insert:
+INSERT INTO tracking (track,status) VALUES (?,?);
+
+status:
+SELECT * FROM tracking WHERE track=? ORDER BY id;

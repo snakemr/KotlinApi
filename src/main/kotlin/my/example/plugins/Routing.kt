@@ -40,6 +40,7 @@ fun Application.configureRouting() {
                     |GET delivery/{track-id}: Информация о пакете → json
                     |POST payment/{track-id}: Запрос оплаты доставки
                     |GET payment/{track-id}: Информация о статусе оплаты
+                    |GET tracking/{track-id}: Статус доставки → json
                     |GET history: История транзакций → json
                     |GET chat: Все последние сообщения в чатах
                     |GET chat/№: Все сообщения в чате с пользователем id с указанием непросмотренных
@@ -180,7 +181,7 @@ fun Application.configureRouting() {
             val pack = database.packageQueries.get(track).executeAsOneOrNull()
                 ?: return@post call.respond(HttpStatusCode.NotFound, "Package not found")
             val addresses = database.addressQueries.get(track).executeAsList().size - 1
-            if (pack.status > Status.New.ordinal || addresses <= 0)
+            if (pack.status > Status.Created.ordinal || addresses <= 0)
                 return@post call.respond(HttpStatusCode.Conflict, "Bad package status")
             val sum = (addresses * 2_500 + 300) * 1.05
             if (sum > balance)
@@ -188,12 +189,12 @@ fun Application.configureRouting() {
             val user = database.logonQueries.user(token).executeAsOneOrNull()
                 ?: return@post call.respond(HttpStatusCode.NotFound, "User not found")
             database.packageQueries.status(Status.Processing.ordinal.toLong(), track)
-            call.respondText(Status.Processing.name)
+            call.respondText(Status.Processing.text)
             launch {
                 delay(Random.nextLong(500, 3000))
                 database.userQueries.charge(sum, user)
                 database.historyQueries.add(user, -sum, pack.items)
-                database.packageQueries.status(Status.Sent.ordinal.toLong(), track)
+                database.packageQueries.status(Status.Successful.ordinal.toLong(), track)
             }
         }
 
@@ -202,7 +203,24 @@ fun Application.configureRouting() {
             val track = call.parameters["id"] ?: return@get
             val pack = database.packageQueries.get(track).executeAsOneOrNull()
                 ?: return@get call.respond(HttpStatusCode.NotFound, "Package not found")
-            call.respondText(Status.entries.getOrNull(pack.status.toInt())?.name ?: "Unknown")
+            call.respondText(Status.entries.getOrNull(pack.status.toInt())?.text ?: "Unknown")
+        }
+
+        get("tracking/{id}") {
+            getAuth(database) ?: return@get
+            val track = call.parameters["id"] ?: return@get
+            var status = database.packageQueries.get(track).executeAsOneOrNull()
+                ?.status?.takeIf { it >= Status.Successful.ordinal }
+                ?: return@get call.respond(HttpStatusCode.NotFound, "Package not found")
+            val history = database.trackingQueries.status(track).executeAsList().map {
+                Track(Status.entries.getOrNull(it.status.toInt())?.text ?: "Unknown", it.date)
+            }
+            call.respond(history)
+            if (status < Status.Delivered.ordinal && Random.nextInt(1) == 0) launch {
+                status = Status.entries[status.toInt() + 1].ordinal.toLong()
+                database.trackingQueries.insert(track, status)
+                database.packageQueries.status(status, track)
+            }
         }
 
         get("history") {

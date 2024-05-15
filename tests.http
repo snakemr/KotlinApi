@@ -69,16 +69,20 @@ Accept: text/plain
 }
 
 ### SHOW delivery package
-GET http://localhost/delivery/R-197b66ec-393e-469d-8f81-2c3e308641e1
+GET http://localhost/delivery/R-861e43fd-ce00-4828-bb1b-406c9da2f715
 Accept: application/json
 
 ### make PAYMENT
-POST http://localhost/payment/R-197b66ec-393e-469d-8f81-2c3e308641e1
+POST http://localhost/payment/R-861e43fd-ce00-4828-bb1b-406c9da2f715
 Accept: text/plain
 
 ### PAYMENT status
-GET http://localhost/payment/R-197b66ec-393e-469d-8f81-2c3e308641e1
+GET http://localhost/payment/R-861e43fd-ce00-4828-bb1b-406c9da2f715
 Accept: text/plain
+
+### TRACKING status
+GET http://localhost/tracking/R-861e43fd-ce00-4828-bb1b-406c9da2f715
+Accept: application/json
 
 ### HISTORY
 GET http://localhost/history
