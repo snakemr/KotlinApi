@@ -50,6 +50,7 @@ Accept: text/plain
 
 {
   "track": "",
+  "items": "books",
   "weight": 100.0,
   "worth": 200.0,
   "origin": {
@@ -68,7 +69,19 @@ Accept: text/plain
 }
 
 ### SHOW delivery package
-GET http://localhost/delivery/R-4681c24a-ee38-4935-904c-0b4855bcb899
+GET http://localhost/delivery/R-197b66ec-393e-469d-8f81-2c3e308641e1
+Accept: application/json
+
+### make PAYMENT
+POST http://localhost/payment/R-197b66ec-393e-469d-8f81-2c3e308641e1
+Accept: text/plain
+
+### PAYMENT status
+GET http://localhost/payment/R-197b66ec-393e-469d-8f81-2c3e308641e1
+Accept: text/plain
+
+### HISTORY
+GET http://localhost/history
 Accept: application/json
 
 ### ALL MESSAGES

@@ -9,10 +9,11 @@ package TEXT DEFAULT NULL
 
 CREATE INDEX address_package ON address(package);
 
-insert {
+insert:
 INSERT INTO address(address, state, phone, others, package) VALUES (?,?,?,?,?);
-SELECT last_insert_rowid();
-}
+
+delete:
+DELETE FROM address WHERE package=?;
 
 get:
 SELECT * FROM address WHERE package=? ORDER BY id;

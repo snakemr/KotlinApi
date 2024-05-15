@@ -8,6 +8,8 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.util.pipeline.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import my.example.Database
 import my.example.Session
 import java.awt.Font
@@ -27,7 +29,7 @@ fun Application.configureRouting() {
                 database.userQueries.all().executeAsList()
                 call.respondText("""API готов к работе.
                     |POST register: Добавить пользователя (name, email, phone, pass)
-                    |POST login: Авторизация пользователя (email, pass) → cookie Session token
+                    |POST login: Авторизация пользователя (email, pass) → Session token
                     |POST forgot: Отправка кода сброса пароля (email) - во всплывающем окне
                     |POST otp: Код подтверждения (email, otp) после forgot
                     |POST password: Установка пароля (email, pass) после otp
@@ -35,6 +37,10 @@ fun Application.configureRouting() {
                     |POST logout: Выход пользователя
                     |POST balance: Запрос баланса
                     |POST delivery: Доставка json: { track, weight, worth, origin: {...}, destinations: [{...}] }
+                    |GET delivery/{track-id}: Информация о пакете → json
+                    |POST payment/{track-id}: Запрос оплаты доставки
+                    |GET payment/{track-id}: Информация о статусе оплаты
+                    |GET history: История транзакций → json
                     |GET chat: Все последние сообщения в чатах
                     |GET chat/№: Все сообщения в чате с пользователем id с указанием непросмотренных
                     |POST chat/№: Отправить сообщение пользователю id (message)
@@ -79,8 +85,6 @@ fun Application.configureRouting() {
         }
 
         post("logout") {
-//            val token = call.receiveParameters()["token"]?.takeIf { it.isNotEmpty() }
-//                ?: return@post call.respond(HttpStatusCode.BadRequest, "Token is empty")
             val token = getAuth(database) ?: return@post
             database.logonQueries.logout(token)
             call.sessions.clear<Session>()
@@ -135,8 +139,6 @@ fun Application.configureRouting() {
         }
 
         get("balance") {
-//            val token = call.receiveParameters()["token"]?.takeIf { it.isNotEmpty() }
-//                ?: return@post call.respond(HttpStatusCode.BadRequest, "Token is empty")
             val token = getAuth(database) ?: return@get
             val balance = database.logonQueries.balance(token).executeAsOneOrNull()?.balance
                 ?: return@get call.respond(HttpStatusCode.NotFound, "User not found")
@@ -147,14 +149,16 @@ fun Application.configureRouting() {
             getAuth(database) ?: return@post
             val delivery = call.receive<Delivery>()
             val track = delivery.track.takeIf { it.isNotEmpty() } ?: "R-${UUID.randomUUID()}"
+            database.packageQueries.delete(track)
+            database.addressQueries.delete(track)
             with(delivery) {
-                database.packageQueries.insert(track, weight, worth).executeAsOne()
+                database.packageQueries.insert(track, items, weight, worth)
             }
             with(delivery.origin) {
-                database.addressQueries.insert(address, state, phone, others, track).executeAsOne()
+                database.addressQueries.insert(address, state, phone, others, track)
             }
             delivery.destinations.forEach {
-                database.addressQueries.insert(it.address, it.state, it.phone, it.others, track).executeAsOne()
+                database.addressQueries.insert(it.address, it.state, it.phone, it.others, track)
             }
             call.respond(track)
         }
@@ -164,8 +168,47 @@ fun Application.configureRouting() {
             val track = call.parameters["id"] ?: return@get
             val pack = database.packageQueries.get(track).executeAsOneOrNull() ?: return@get
             val address = database.addressQueries.get(track).executeAsList().takeIf { it.isNotEmpty() } ?: return@get
-            val delivery = Delivery(pack.track, pack.weight, pack.worth, address.first(), address.drop(1))
+            val delivery = Delivery(pack.track, pack.items, pack.weight, pack.worth, address.first(), address.drop(1))
             call.respond(delivery)
+        }
+
+        post("payment/{id}") {
+            val token = getAuth(database) ?: return@post
+            val balance = database.logonQueries.balance(token).executeAsOneOrNull()?.balance
+                ?: return@post call.respond(HttpStatusCode.NotFound, "User not found")
+            val track = call.parameters["id"] ?: return@post
+            val pack = database.packageQueries.get(track).executeAsOneOrNull()
+                ?: return@post call.respond(HttpStatusCode.NotFound, "Package not found")
+            val addresses = database.addressQueries.get(track).executeAsList().size - 1
+            if (pack.status > Status.New.ordinal || addresses <= 0)
+                return@post call.respond(HttpStatusCode.Conflict, "Bad package status")
+            val sum = (addresses * 2_500 + 300) * 1.05
+            if (sum > balance)
+                return@post call.respond(HttpStatusCode.PaymentRequired, "Insufficient funds")
+            val user = database.logonQueries.user(token).executeAsOneOrNull()
+                ?: return@post call.respond(HttpStatusCode.NotFound, "User not found")
+            database.packageQueries.status(Status.Processing.ordinal.toLong(), track)
+            call.respondText(Status.Processing.name)
+            launch {
+                delay(Random.nextLong(500, 3000))
+                database.userQueries.charge(sum, user)
+                database.historyQueries.add(user, -sum, pack.items)
+                database.packageQueries.status(Status.Sent.ordinal.toLong(), track)
+            }
+        }
+
+        get("payment/{id}") {
+            getAuth(database) ?: return@get
+            val track = call.parameters["id"] ?: return@get
+            val pack = database.packageQueries.get(track).executeAsOneOrNull()
+                ?: return@get call.respond(HttpStatusCode.NotFound, "Package not found")
+            call.respondText(Status.entries.getOrNull(pack.status.toInt())?.name ?: "Unknown")
+        }
+
+        get("history") {
+            val token = getAuth(database) ?: return@get
+            val history = database.logonQueries.history(token).executeAsList()
+            call.respond(history)
         }
 
         post("chat/seen/{id}") {

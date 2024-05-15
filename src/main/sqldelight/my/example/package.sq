@@ -1,13 +1,19 @@
 CREATE TABLE package (
 track TEXT PRIMARY KEY,
+items TEXT NOT NULL,
 weight REAL NOT NULL,
-worth REAL NOT NULL
+worth REAL NOT NULL,
+status INTEGER NOT NULL DEFAULT 0
 );
 
-insert {
-INSERT INTO package VALUES (?,?,?);
-SELECT last_insert_rowid();
-}
+insert:
+INSERT INTO package (track,items,weight,worth) VALUES (?,?,?,?);
+
+delete:
+DELETE FROM package WHERE track=?;
 
 get:
 SELECT * FROM package WHERE track=?;
+
+status:
+UPDATE package SET status=? WHERE track=?;

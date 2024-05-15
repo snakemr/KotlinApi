@@ -1,0 +1,12 @@
+CREATE TABLE history (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+user INTEGER NOT NULL,
+charge REAL NOT NULL,
+comment TEXT NOT NULL,
+date TEXT DEFAULT CURRENT_DATE
+);
+
+CREATE INDEX history_user ON history(user);
+
+add:
+INSERT INTO history (user,charge,comment) VALUES (?,?,?);
