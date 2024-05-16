@@ -35,6 +35,7 @@ fun Application.configureRouting() {
                     |POST password: Установка пароля (email, pass) после otp
                     |далее требуется авторизация (cookie Session token=...)
                     |POST logout: Выход пользователя
+                    |POST profile: Запрос профиля
                     |POST balance: Запрос баланса
                     |POST delivery: Доставка json: { track, weight, worth, origin: {...}, destinations: [{...}] }
                     |GET delivery/{track-id}: Информация о пакете → json
@@ -102,7 +103,7 @@ fun Application.configureRouting() {
             database.forgotQueries.delete(email)
             database.forgotQueries.add(email, code)
             JFrame("OTP code verification").apply {
-                JLabel("OPT code for $email: $code").apply {
+                JLabel("OPT code for $email: " + code.toString().padStart(6, '0')).apply {
                     font = Font("Serif", Font.BOLD, 20)
                     border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
                 }.let(::add)
@@ -139,9 +140,16 @@ fun Application.configureRouting() {
             call.respondText("New password is set")
         }
 
+        get("profile") {
+            val token = getAuth(database) ?: return@get
+            val profile = database.logonQueries.profile(token).executeAsOneOrNull()
+                ?: return@get call.respond(HttpStatusCode.NotFound, "User not found")
+            call.respond(profile)
+        }
+
         get("balance") {
             val token = getAuth(database) ?: return@get
-            val balance = database.logonQueries.balance(token).executeAsOneOrNull()?.balance
+            val balance = database.logonQueries.profile(token).executeAsOneOrNull()?.balance
                 ?: return@get call.respond(HttpStatusCode.NotFound, "User not found")
             call.respond(balance)
         }
@@ -175,7 +183,7 @@ fun Application.configureRouting() {
 
         post("payment/{id}") {
             val token = getAuth(database) ?: return@post
-            val balance = database.logonQueries.balance(token).executeAsOneOrNull()?.balance
+            val balance = database.logonQueries.profile(token).executeAsOneOrNull()?.balance
                 ?: return@post call.respond(HttpStatusCode.NotFound, "User not found")
             val track = call.parameters["id"] ?: return@post
             val pack = database.packageQueries.get(track).executeAsOneOrNull()

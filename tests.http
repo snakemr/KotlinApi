@@ -43,6 +43,10 @@ email=sidorov@example.my&pass=qwerty
 GET http://localhost/balance
 Accept: application/json
 
+### PROFILE
+GET http://localhost/profile
+Accept: application/json
+
 ### DELIVERY
 POST http://localhost/delivery
 Content-Type: application/json

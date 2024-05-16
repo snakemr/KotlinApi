@@ -18,8 +18,8 @@ DELETE FROM logon WHERE token=?;
 user:
 SELECT user FROM logon WHERE token=?;
 
-balance:
-SELECT balance FROM logon LEFT JOIN user ON logon.user=user.id WHERE token=?;
+profile:
+SELECT user.* FROM logon LEFT JOIN user ON logon.user=user.id WHERE token=?;
 
 history:
 SELECT history.* FROM logon LEFT JOIN history ON logon.user=history.user WHERE token=? ORDER BY date;
