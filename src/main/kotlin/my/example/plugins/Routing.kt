@@ -3,6 +3,7 @@ package my.example.plugins
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.http.content.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 import my.example.Database
 import my.example.Session
 import java.awt.Font
+import java.io.File
 import java.util.*
 import javax.swing.*
 import kotlin.random.Random
@@ -47,6 +49,7 @@ fun Application.configureRouting() {
                     |GET chat/№: Все сообщения в чате с пользователем id с указанием непросмотренных
                     |POST chat/№: Отправить сообщение пользователю id (message)
                     |POST chat/seen/№: Отметить сообщение id просмотренным
+                    |images/*.png: Изображения 
                 """.trimMargin())
             } catch (_: Exception) {
                 Database.Schema.create(driver)
@@ -158,12 +161,16 @@ fun Application.configureRouting() {
             getAuth(database) ?: return@post
             val delivery = call.receive<Delivery>()
             val track = delivery.track.takeIf { it.isNotEmpty() } ?: "R-${UUID.randomUUID()}"
-            database.packageQueries.delete(track)
-            database.addressQueries.delete(track)
-            with(delivery) {
-                database.packageQueries.insert(track, items, weight, worth)
+            try {
+                database.packageQueries.delete(track)
+                with(delivery) {
+                    database.packageQueries.insert(track, items, weight, worth)
+                }
+            } catch (_: Exception) {
+                return@post call.respond(HttpStatusCode.BadRequest, "Package is already registered")
             }
             with(delivery.origin) {
+                database.addressQueries.delete(track)
                 database.addressQueries.insert(address, state, phone, others, track)
             }
             delivery.destinations.forEach {
@@ -270,6 +277,8 @@ fun Application.configureRouting() {
             }
             call.respond(messages)
         }
+
+        staticFiles("/images", File("images"))
     }
 }
 

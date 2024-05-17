@@ -10,7 +10,7 @@ insert:
 INSERT INTO package (track,items,weight,worth) VALUES (?,?,?,?);
 
 delete:
-DELETE FROM package WHERE track=?;
+DELETE FROM package WHERE track=? AND status=0;
 
 get:
 SELECT * FROM package WHERE track=?;
