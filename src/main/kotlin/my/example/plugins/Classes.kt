@@ -8,7 +8,8 @@ data class Delivery(
     val weight: Double,
     val worth: Double,
     val origin: Address,
-    val destinations: List<Address>
+    val destinations: List<Address>,
+    val status: Long?
 )
 
 data class Track(

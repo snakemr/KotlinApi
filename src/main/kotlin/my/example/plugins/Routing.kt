@@ -16,7 +16,9 @@ import my.example.Session
 import java.awt.Font
 import java.io.File
 import java.util.*
-import javax.swing.*
+import javax.swing.BorderFactory
+import javax.swing.JFrame
+import javax.swing.JLabel
 import kotlin.random.Random
 
 fun Application.configureRouting() {
@@ -44,6 +46,7 @@ fun Application.configureRouting() {
                     |POST payment/{track-id}: Запрос оплаты доставки
                     |GET payment/{track-id}: Информация о статусе оплаты
                     |GET tracking/{track-id}: Статус доставки → json
+                    |POST feedback/{track-id}: Отправка отзыва
                     |GET history: История транзакций → json
                     |GET chat: Все последние сообщения в чатах
                     |GET chat/№: Все сообщения в чате с пользователем id с указанием непросмотренных
@@ -184,7 +187,9 @@ fun Application.configureRouting() {
             val track = call.parameters["id"] ?: return@get
             val pack = database.packageQueries.get(track).executeAsOneOrNull() ?: return@get
             val address = database.addressQueries.get(track).executeAsList().takeIf { it.isNotEmpty() } ?: return@get
-            val delivery = Delivery(pack.track, pack.items, pack.weight, pack.worth, address.first(), address.drop(1))
+            val delivery = Delivery(
+                pack.track, pack.items, pack.weight, pack.worth, address.first(), address.drop(1), pack.status
+            )
             call.respond(delivery)
         }
 
@@ -231,11 +236,22 @@ fun Application.configureRouting() {
                 Track(Status.entries.getOrNull(it.status.toInt())?.text ?: "Unknown", it.date)
             }
             call.respond(history)
-            if (status < Status.Delivered.ordinal && Random.nextInt(1) == 0) launch {
+            if (status < Status.Delivered.ordinal && Random.nextInt(10) == 0) launch {
                 status = Status.entries[status.toInt() + 1].ordinal.toLong()
                 database.trackingQueries.insert(track, status)
                 database.packageQueries.status(status, track)
             }
+        }
+
+        post("feedback/{id}") {
+            getAuth(database) ?: return@post
+            val track = call.parameters["id"] ?: return@post
+            val params = call.receiveParameters()
+            val message = params["message"]
+            val rating = params["rating"]?.toLongOrNull()
+            database.feedbackQueries.delete(track)
+            database.feedbackQueries.insert(track, message, rating)
+            call.respondText("Feedback is sent")
         }
 
         get("history") {

@@ -1,0 +1,11 @@
+CREATE TABLE feedback (
+track TEXT NOT NULL PRIMARY KEY,
+message TEXT,
+rating INTEGER
+);
+
+insert:
+INSERT INTO feedback VALUES (?,?,?);
+
+delete:
+DELETE FROM feedback WHERE track=?;
