@@ -14,7 +14,9 @@ data class Delivery(
 
 data class Track(
     val status: String,
-    val date: String?
+    val date: String?,
+    val lat: Double?,
+    val lng: Double?
 )
 
 enum class Status(val text: String) {

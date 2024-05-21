@@ -4,13 +4,15 @@ address TEXT NOT NULL,
 state TEXT NOT NULL,
 phone TEXT NOT NULL,
 others TEXT DEFAULT NULL,
+lat REAL DEFAULT NULL,
+lng REAL DEFAULT NULL,
 package TEXT DEFAULT NULL
 );
 
 CREATE INDEX address_package ON address(package);
 
 insert:
-INSERT INTO address(address, state, phone, others, package) VALUES (?,?,?,?,?);
+INSERT INTO address(address, state, phone, others, lat, lng, package) VALUES (?,?,?,?,?,?,?);
 
 delete:
 DELETE FROM address WHERE package=?;

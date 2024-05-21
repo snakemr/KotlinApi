@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import my.example.Database
 import my.example.Session
+import my.example.client.Geocoding
 import java.awt.Font
 import java.io.File
 import java.util.*
@@ -24,6 +25,7 @@ import kotlin.random.Random
 fun Application.configureRouting() {
     val driver = JdbcSqliteDriver("jdbc:sqlite:database.s3db")
     val database = Database(driver)
+    val geocoding = Geocoding()
 
     routing {
 
@@ -174,10 +176,12 @@ fun Application.configureRouting() {
             }
             with(delivery.origin) {
                 database.addressQueries.delete(track)
-                database.addressQueries.insert(address, state, phone, others, track)
+                val geo = geocoding.geocode("$state,$address")
+                database.addressQueries.insert(address, state, phone, others, geo?.lat, geo?.lng, track)
             }
             delivery.destinations.forEach {
-                database.addressQueries.insert(it.address, it.state, it.phone, it.others, track)
+                val geo = geocoding.geocode("${it.state},${it.address}")
+                database.addressQueries.insert(it.address, it.state, it.phone, it.others, geo?.lat, geo?.lng, track)
             }
             call.respond(track)
         }
@@ -229,14 +233,21 @@ fun Application.configureRouting() {
         get("tracking/{id}") {
             getAuth(database) ?: return@get
             val track = call.parameters["id"] ?: return@get
-            var status = database.packageQueries.get(track).executeAsOneOrNull()
-                ?.status?.takeIf { it >= Status.Successful.ordinal }
+            val pack = database.packageQueries.get(track).executeAsOneOrNull()
                 ?: return@get call.respond(HttpStatusCode.NotFound, "Package not found")
+            var status = pack.status.takeIf { it >= Status.Successful.ordinal }
+                ?: return@get call.respond(HttpStatusCode.NotFound, "Package not sent yet")
+            val address = database.addressQueries.get(track).executeAsList().run {
+                if (status.toInt() == Status.Delivered.ordinal) lastOrNull() else firstOrNull()
+            }
             val history = database.trackingQueries.status(track).executeAsList().map {
-                Track(Status.entries.getOrNull(it.status.toInt())?.text ?: "Unknown", it.date)
+                Track(
+                    Status.entries.getOrNull(it.status.toInt())?.text ?: "Unknown", it.date,
+                    address?.lat, address?.lng
+                )
             }
             call.respond(history)
-            if (status < Status.Delivered.ordinal && Random.nextInt(10) == 0) launch {
+            if (status < Status.Delivered.ordinal && Random.nextInt(10) == 10) launch {
                 status = Status.entries[status.toInt() + 1].ordinal.toLong()
                 database.trackingQueries.insert(track, status)
                 database.packageQueries.status(status, track)
