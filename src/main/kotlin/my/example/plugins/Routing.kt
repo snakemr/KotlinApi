@@ -237,20 +237,65 @@ fun Application.configureRouting() {
                 ?: return@get call.respond(HttpStatusCode.NotFound, "Package not found")
             var status = pack.status.takeIf { it >= Status.Successful.ordinal }
                 ?: return@get call.respond(HttpStatusCode.NotFound, "Package not sent yet")
-            val address = database.addressQueries.get(track).executeAsList().run {
-                if (status.toInt() == Status.Delivered.ordinal) lastOrNull() else firstOrNull()
-            }
+            val addresses = database.addressQueries.get(track).executeAsList().takeIf { it.size > 1 }
+                ?: return@get call.respond(HttpStatusCode.NotFound, "Destinations not found")
             val history = database.trackingQueries.status(track).executeAsList().map {
                 Track(
-                    Status.entries.getOrNull(it.status.toInt())?.text ?: "Unknown", it.date,
-                    address?.lat, address?.lng
+                    Status.entries.getOrNull(it.status.toInt())?.text ?: "Unknown", it.date, it.lat, it.lng,
+                    addresses.find { a -> a.id == it.path }?.address
                 )
             }
+
             call.respond(history)
-            if (status < Status.Delivered.ordinal && Random.nextInt(10) == 10) launch {
-                status = Status.entries[status.toInt() + 1].ordinal.toLong()
-                database.trackingQueries.insert(track, status)
-                database.packageQueries.status(status, track)
+
+            if (status < Status.Delivered.ordinal && Random.nextInt(1) == 0) launch {
+
+                val from = addresses.first().takeIf { it.lat != null && it.lng != null }
+                    ?.run { Geocoding.Location(lat!!, lng!!) }
+
+                status ++
+                if (status < Status.Transit.ordinal) {
+                    database.packageQueries.status(status, track)
+                    database.trackingQueries.insert(track, status, null, null, null, null)
+
+                    if (status < Status.Ready.ordinal && from != null) {
+                        addresses.drop(1).filter { it.lat != null && it.lng != null }.forEach { last ->
+                            val to = Geocoding.Location(last.lat!!, last.lng!!)
+                            geocoding.directions(from, to).forEach {
+                                database.pathQueries.insert(last.id, it.end_location.lat, it.end_location.lng)
+                            }
+                        }
+                    }
+                }
+                else {
+                    val last = database.trackingQueries.status(track).executeAsList().lastOrNull()
+                    if (last?.status != Status.Transit.ordinal.toLong()) {
+                        database.packageQueries.status(status, track)
+                        database.trackingQueries.insert(track, status, addresses[1].id, -1, from?.lat, from?.lng)
+                    }
+                    else {
+                        val path = last.path?.let { database.pathQueries.get(it) }?.executeAsList() ?: emptyList()
+                        val next = path.indexOfFirst { it.id == last.point } + 1
+                        if (next < path.size) path[next].let {
+                            status--
+                            database.trackingQueries.delete(track, status)
+                            database.trackingQueries.insert(track, status, last.path, it.id, it.lat, it.lng)
+                        } else {
+                            val new = addresses.indexOfFirst { it.id == last.path } + 1
+                            if (new < addresses.size) addresses[new].let {
+                                status--
+                                database.trackingQueries.delete(track, status)
+                                database.trackingQueries.insert(track, status, it.id, -1, from?.lat, from?.lng)
+                            } else {
+                                database.packageQueries.status(status, track)
+                                database.trackingQueries.insert(track, status, null, null, null, null)
+                                addresses.drop(1).forEach {
+                                    database.pathQueries.delete(it.id)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

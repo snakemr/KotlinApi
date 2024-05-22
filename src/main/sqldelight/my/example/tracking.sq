@@ -2,13 +2,22 @@ CREATE TABLE tracking (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 track TEXT NOT NULL,
 status INTEGER NOT NULL,
-date TEXT DEFAULT CURRENT_TIMESTAMP
+date TEXT DEFAULT CURRENT_TIMESTAMP,
+path INTEGER DEFAULT NULL,
+point INTEGER DEFAULT NULL,
+lat REAL DEFAULT NULL,
+lng REAL DEFAULT NULL
 );
 
 CREATE INDEX tracking_track ON tracking(track);
+CREATE INDEX tracking_path ON tracking(path);
+CREATE INDEX tracking_point ON tracking(point);
 
 insert:
-INSERT INTO tracking (track,status) VALUES (?,?);
+INSERT INTO tracking (track,status,path,point,lat,lng) VALUES (?,?,?,?,?,?);
+
+delete:
+DELETE FROM tracking WHERE track=? AND status=?;
 
 status:
 SELECT * FROM tracking WHERE track=? ORDER BY id;

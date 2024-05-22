@@ -16,7 +16,8 @@ data class Track(
     val status: String,
     val date: String?,
     val lat: Double?,
-    val lng: Double?
+    val lng: Double?,
+    val destination: String?
 )
 
 enum class Status(val text: String) {

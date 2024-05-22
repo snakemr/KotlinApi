@@ -1,0 +1,17 @@
+CREATE TABLE path (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+address INTEGER NOT NULL,
+lat REAL NOT NULL,
+lng REAL NOT NULL
+);
+
+CREATE INDEX path_address ON path(address);
+
+insert:
+INSERT INTO path(address, lat, lng) VALUES (?,?,?);
+
+get:
+SELECT * FROM path WHERE address=? ORDER BY id;
+
+delete:
+DELETE FROM path WHERE address=?;
