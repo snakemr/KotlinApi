@@ -51,7 +51,7 @@ class Geocoding {
     }
 
     companion object {
-        private const val API_KEY = "AIzaSyAk68rqRvfa7NYt0rm3XspguSASPFOA3jE"
+        private const val API_KEY = "---"
         private const val API_URL = "https://maps.googleapis.com/"
         private const val API_GEO = API_URL + "maps/api/geocode/json"
         private const val API_DIR = API_URL + "maps/api/directions/json"
