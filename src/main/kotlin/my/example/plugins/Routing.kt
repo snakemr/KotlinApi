@@ -53,7 +53,7 @@ fun Application.configureRouting() {
                     |GET chat: Все последние сообщения в чатах
                     |GET chat/№: Все сообщения в чате с пользователем id с указанием непросмотренных
                     |POST chat/№: Отправить сообщение пользователю id (message)
-                    |POST chat/seen/№: Отметить сообщение id просмотренным
+                    |POST chat/№/seen: Отметить сообщения в чате с id просмотренными
                     |images/*.png: Изображения 
                 """.trimMargin())
             } catch (_: Exception) {
@@ -248,7 +248,7 @@ fun Application.configureRouting() {
 
             call.respond(history)
 
-            if (status < Status.Delivered.ordinal && Random.nextInt(1) == 0) launch {
+            if (status < Status.Delivered.ordinal && Random.nextInt(3) == 0) launch {
 
                 val from = addresses.first().takeIf { it.lat != null && it.lng != null }
                     ?.run { Geocoding.Location(lat!!, lng!!) }
@@ -316,11 +316,11 @@ fun Application.configureRouting() {
             call.respond(history)
         }
 
-        post("chat/seen/{id}") {
+        post("chat/{id}/seen") {
             val token = getAuth(database) ?: return@post
-            val recipient = database.logonQueries.user(token).executeAsOneOrNull() ?: return@post
-            val id = call.parameters["id"]?.toLongOrNull() ?: return@post
-            database.chatQueries.seen(id, recipient)
+            val user = database.logonQueries.user(token).executeAsOneOrNull() ?: return@post
+            val sender = call.parameters["id"]?.toLongOrNull() ?: return@post
+            database.chatQueries.seen(sender, user)
             call.respond(HttpStatusCode.OK)
         }
 
@@ -345,7 +345,10 @@ fun Application.configureRouting() {
             val user = database.logonQueries.user(token).executeAsOneOrNull() ?: return@get
             val last = database.chatQueries.last(token).executeAsList()
             val messages = database.chatQueries.all(user, last.mapNotNull { it.id }).executeAsList().map { chat ->
-                chat.copy(unseen = last.find { it.id==chat.id }?.unseen?.toLong() ?: 0)
+                chat.copy(
+                    id = if (chat.sender != user) chat.sender else chat.recipient,
+                    unseen = last.find { it.id==chat.id }?.unseen?.toLong() ?: 0
+                )
             }
             call.respond(messages)
         }

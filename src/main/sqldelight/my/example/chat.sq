@@ -16,10 +16,11 @@ messages:
 SELECT chat.* FROM logon
 LEFT JOIN user ON user.id=logon.user
 LEFT JOIN chat ON user.id=chat.sender OR user.id=chat.recipient
-WHERE logon.token=:token AND chat.sender=:user OR chat.recipient=:user;
+WHERE logon.token=:token AND chat.sender=:user OR chat.recipient=:user
+ORDER BY chat.id;
 
 seen:
-UPDATE chat SET seen=1 WHERE id=:id AND recipient=:recipient;
+UPDATE chat SET seen=1 WHERE sender=:sender AND recipient=:recipient;
 
 last:
 SELECT MAX(chat.id) id, SUM(seen=0 AND user.id=recipient) unseen FROM logon
@@ -29,6 +30,6 @@ WHERE logon.token=:token
 GROUP BY CASE WHEN user.id=sender THEN recipient ELSE sender END;
 
 all:
-SELECT chat.id, sender, recipient, message, seen unseen, name FROM chat
+SELECT chat.id, sender, recipient, message, seen unseen, name, phone FROM chat
 LEFT JOIN user ON user.id=sender OR user.id=recipient
 WHERE user.id<>:user AND chat.id IN :last;
