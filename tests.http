@@ -112,4 +112,8 @@ POST http://localhost/chat/seen/1
 Content-Type: application/x-www-form-urlencoded
 Accept: text/plain
 
+### AVATAR
+GET http://localhost/images/1.png
+Accept: image/png
+
 ###

@@ -353,7 +353,11 @@ fun Application.configureRouting() {
             call.respond(messages)
         }
 
-        staticFiles("/images", File("images"))
+        staticFiles("/images", File("images")) {
+            cacheControl {
+                listOf(CacheControl.MaxAge(10000))
+            }
+        }
     }
 }
 
