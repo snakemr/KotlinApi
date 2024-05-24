@@ -2,6 +2,7 @@ package my.example.plugins
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.http.content.*
 import io.ktor.server.request.*
@@ -353,7 +354,19 @@ fun Application.configureRouting() {
             call.respond(messages)
         }
 
-        staticFiles("/images", File("images")) {
+        post("images") {
+            val token = getAuth(database) ?: return@post
+            val user = database.logonQueries.profile(token).executeAsOneOrNull()?.id ?: return@post
+            val multipart = call.receiveMultipart()
+            multipart.forEachPart {
+                if (it is PartData.FileItem) it.streamProvider().use { input ->
+                    File("images/$user.png").writeBytes(input.readBytes())
+                }
+            }
+            call.respond(HttpStatusCode.OK)
+        }
+
+        staticFiles("images", File("images")) {
             cacheControl {
                 listOf(CacheControl.MaxAge(10000))
             }
