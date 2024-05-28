@@ -4,7 +4,7 @@ val logback_version: String by project
 val sqlite_version: String by project
 
 plugins {
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version "1.9.23"
     id("io.ktor.plugin") version "2.3.7"
     id("app.cash.sqldelight") version "2.0.1"
 }
