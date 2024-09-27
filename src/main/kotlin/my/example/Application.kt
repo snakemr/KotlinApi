@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.websocket.WebSockets
 import my.example.plugins.*
 
 fun main() {
@@ -18,5 +19,6 @@ fun Application.module() {
             setPrettyPrinting()
         }
     }
+    install(WebSockets)
     configureRouting()
 }

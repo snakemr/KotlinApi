@@ -4,9 +4,9 @@ val logback_version: String by project
 val sqlite_version: String by project
 
 plugins {
-    kotlin("jvm") version "1.9.21"
-    id("io.ktor.plugin") version "2.3.7"
-    id("app.cash.sqldelight") version "2.0.1"
+    kotlin("jvm") version "2.0.20"
+    id("io.ktor.plugin") version "2.3.12"
+    id("app.cash.sqldelight") version "2.0.2"
 }
 
 group = "my.example"
@@ -34,6 +34,7 @@ dependencies {
     implementation("io.ktor:ktor-serialization-gson-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-html-builder-jvm:$ktor_version")
     implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
+    implementation("io.ktor:ktor-server-websockets-jvm:$ktor_version")
     implementation("app.cash.sqldelight:sqlite-driver:$sqlite_version")
     implementation("ch.qos.logback:logback-classic:$logback_version")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
