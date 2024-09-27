@@ -7,21 +7,19 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import my.example.Database
 import my.example.User
-import my.example.data.*
+import my.example.data.Action
+import my.example.data.DataAction
+import my.example.data.SharedActions
 
 fun Application.configureRouting() {
     val driver = JdbcSqliteDriver("jdbc:sqlite:database.s3db")
     val database = Database(driver)
 
-    val userSharedFlow = MutableSharedFlow<DataAction<User>>()
-    val userFlow = userSharedFlow.asSharedFlow()
-    val userLocks = mutableMapOf<Long, String>()
+    val userActions = SharedActions { User(it, "") }
 
     routing {
 
@@ -68,7 +66,7 @@ fun Application.configureRouting() {
             val name = call.receiveParameters()["name"] ?: return@post
             val id = database.userQueries.insert(name).executeAsOne()
             call.respondText("Пользователь №$id добавлен")
-            userSharedFlow.emit(User(id, name).inserted())
+            userActions.insert(User(id, name))
         }
 
         // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
@@ -76,7 +74,7 @@ fun Application.configureRouting() {
             val user = call.receive<User>()
             database.userQueries.add(user)
             call.respondText("Пользователь №${user.id} добавлен")
-            userSharedFlow.emit(user.inserted())
+            userActions.insert(user)
         }
 
         // При отправке json-объекта "User" на адрес /user данные пользователя обновляются
@@ -85,7 +83,7 @@ fun Application.configureRouting() {
             database.userQueries.user(user.id).executeAsOneOrNull()?.takeIf { it != user }?. let {
                 database.userQueries.update(user.name, user.id)
                 call.respondText("Пользователь №${user.id} обновлён")
-                userSharedFlow.emit(user.updated())
+                userActions.update(user)
             }
         }
 
@@ -95,35 +93,30 @@ fun Application.configureRouting() {
             database.userQueries.user(id).executeAsOneOrNull()?.let { user ->
                 database.userQueries.delete(id)
                 call.respondText("Пользователь №$id удалён")
-                userSharedFlow.emit(user.deleted())
+                userActions.delete(user)
             }
         }
 
         // Подписаться на обновления таблицы user
         webSocket("/user") {
-            val id = toString().substringAfter('@')
+            val session = toString().substringAfter('@')
             launch {
-                userLocks.forEach {
-                    sendSerialized(User(it.key, "").locked())
+                userActions.locks.forEach {
+                    sendSerialized(it)
                 }
-                userFlow.collect { action ->
-                    sendSerialized(action)
+                userActions.flow.collect {
+                    sendSerialized(it)
                 }
             }
             while (coroutineContext.isActive) try {
-                receiveDeserialized<DataAction<User>>().let {
-                    if (it.action == Action.Lock && it.data.id !in userLocks) {
-                        userLocks[it.data.id] = id
-                        userSharedFlow.emit(it)
-                    } else if (it.action == Action.Unlock && userLocks[it.data.id] == id) {
-                        userLocks.remove(it.data.id)
-                        userSharedFlow.emit(it)
-                    }
+                val (action, data) = receiveDeserialized<DataAction<User>>()
+                when (action) {
+                    Action.Lock -> userActions.lock(data, session) { it.id }
+                    Action.Unlock -> userActions.unlock(data, session) { it.id }
+                    else -> {}
                 }
             } catch (ex: ClosedReceiveChannelException) {
-                userLocks -= userLocks.filterValues { it == id }.keys.onEach {
-                    userSharedFlow.emit(User(it, "").unlocked())
-                }
+                userActions.unlockAll(session)
                 break
             } catch (_: Exception) {}
         }
