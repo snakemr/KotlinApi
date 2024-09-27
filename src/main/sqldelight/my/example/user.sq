@@ -13,11 +13,16 @@ SELECT * FROM user;
 user:
 SELECT * FROM user WHERE id=?;
 
-insert:
+insert {
 INSERT INTO user(name) VALUES (?);
+SELECT last_insert_rowid();
+}
 
 add:
 INSERT INTO user VALUES ?;
+
+update:
+UPDATE user SET name=? WHERE id=?;
 
 delete:
 DELETE FROM user WHERE id=?;

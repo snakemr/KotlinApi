@@ -11,18 +11,22 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.server.websocket.sendSerialized
 import io.ktor.server.websocket.webSocket
-import io.ktor.websocket.CloseReason
-import io.ktor.websocket.Frame
-import io.ktor.websocket.close
-import io.ktor.websocket.readText
-import io.ktor.websocket.send
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
 import my.example.Database
 import my.example.User
+import my.example.data.DataAction
+import my.example.data.deleted
+import my.example.data.inserted
+import my.example.data.updated
 
 fun Application.configureRouting() {
     val driver = JdbcSqliteDriver("jdbc:sqlite:database.s3db")
     val database = Database(driver)
+
+    val userChannel = Channel<DataAction<User>>()
 
     routing {
 
@@ -67,34 +71,43 @@ fun Application.configureRouting() {
         // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
         post("add") {
             val name = call.receiveParameters()["name"] ?: return@post
-            database.userQueries.insert(name)
-            call.respondText("Пользователь добавлен")
+            val id = database.userQueries.insert(name).executeAsOne()
+            call.respondText("Пользователь №$id добавлен")
+            userChannel.send(User(id, name).inserted())
         }
 
         // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
         post("new") {
             val user = call.receive<User>()
             database.userQueries.add(user)
-            call.respondText("Пользователь добавлен")
+            call.respondText("Пользователь №${user.id} добавлен")
+            userChannel.send(user.inserted())
+        }
+
+        // При отправке json-объекта "User" на адрес /user данные пользователя обновляются
+        post("user") {
+            val user = call.receive<User>()
+            database.userQueries.user(user.id).executeAsOneOrNull()?.takeIf { it != user }?. let {
+                database.userQueries.update(user.name, user.id)
+                call.respondText("Пользователь №${user.id} обновлён")
+                userChannel.send(user.updated())
+            }
         }
 
         // При запросе удаления по адресу /user/№ пользователь удаляется из таблицы
         delete("user/{id}") {
             val id = call.parameters["id"]?.toLongOrNull() ?: return@delete
-            database.userQueries.delete(id)
-            call.respondText("Пользователь удалён")
+            database.userQueries.user(id).executeAsOneOrNull()?.let { user ->
+                database.userQueries.delete(id)
+                call.respondText("Пользователь №$id удалён")
+                userChannel.send(user.deleted())
+            }
         }
 
-        webSocket("/echo") {
-            send("Enter your name")
-            for (frame in incoming) {
-                frame as? Frame.Text ?: continue
-                val receivedText = frame.readText()
-                if (receivedText.equals("bye", ignoreCase = true)) {
-                    close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
-                } else {
-                    send(Frame.Text("Hi, $receivedText!"))
-                }
+        // Подписаться на обновления таблицы user
+        webSocket("/user") {
+            userChannel.consumeEach { action ->
+                sendSerialized(action)
             }
         }
     }

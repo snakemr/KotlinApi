@@ -1,5 +1,6 @@
 package my.example
 
+import io.ktor.serialization.gson.GsonWebsocketContentConverter
 import io.ktor.serialization.gson.gson
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -19,6 +20,8 @@ fun Application.module() {
             setPrettyPrinting()
         }
     }
-    install(WebSockets)
+    install(WebSockets) {
+        contentConverter = GsonWebsocketContentConverter()
+    }
     configureRouting()
 }
