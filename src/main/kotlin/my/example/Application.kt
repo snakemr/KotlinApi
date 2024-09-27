@@ -15,7 +15,7 @@ fun main() {
 
 fun Application.module() {
     install(Sessions) {
-        cookie<Session>("Session")
+        header<Session>("Session")
     }
     install(ContentNegotiation) {
         gson {

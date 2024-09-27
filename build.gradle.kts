@@ -5,7 +5,7 @@ val sqlite_version: String by project
 
 plugins {
     kotlin("jvm") version "1.9.24"
-    id("io.ktor.plugin") version "2.3.11"
+    id("io.ktor.plugin") version "2.3.12"
     id("app.cash.sqldelight") version "2.0.2"
 }
 
