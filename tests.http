@@ -31,7 +31,17 @@ Accept: text/plain
   "name": "Пётр Иванов"
 }
 
-### WebSocket
-WEBSOCKET ws://localhost/echo
+### POST updated user
+POST http://localhost/user
+Content-Type: application/json
+Accept: text/plain
+
+{
+  "id": 999,
+  "name": "Иван Петров"
+}
+
+### user realtime channel
+WEBSOCKET ws://localhost/user
 
 ###
