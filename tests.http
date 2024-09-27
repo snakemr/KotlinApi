@@ -44,4 +44,7 @@ Accept: text/plain
 ### user realtime channel
 WEBSOCKET ws://localhost/user
 
+### user realtime channel 2
+WEBSOCKET ws://localhost/user
+
 ###

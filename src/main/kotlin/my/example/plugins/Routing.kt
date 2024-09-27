@@ -13,20 +13,15 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.sendSerialized
 import io.ktor.server.websocket.webSocket
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
 import my.example.Database
 import my.example.User
-import my.example.data.DataAction
-import my.example.data.deleted
-import my.example.data.inserted
-import my.example.data.updated
+import my.example.data.*
 
 fun Application.configureRouting() {
     val driver = JdbcSqliteDriver("jdbc:sqlite:database.s3db")
     val database = Database(driver)
 
-    val userChannel = Channel<DataAction<User>>()
+    val userActions = SharedActions<User>()
 
     routing {
 
@@ -73,7 +68,7 @@ fun Application.configureRouting() {
             val name = call.receiveParameters()["name"] ?: return@post
             val id = database.userQueries.insert(name).executeAsOne()
             call.respondText("Пользователь №$id добавлен")
-            userChannel.send(User(id, name).inserted())
+            userActions.insert(User(id, name))
         }
 
         // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
@@ -81,7 +76,7 @@ fun Application.configureRouting() {
             val user = call.receive<User>()
             database.userQueries.add(user)
             call.respondText("Пользователь №${user.id} добавлен")
-            userChannel.send(user.inserted())
+            userActions.insert(user)
         }
 
         // При отправке json-объекта "User" на адрес /user данные пользователя обновляются
@@ -90,7 +85,7 @@ fun Application.configureRouting() {
             database.userQueries.user(user.id).executeAsOneOrNull()?.takeIf { it != user }?. let {
                 database.userQueries.update(user.name, user.id)
                 call.respondText("Пользователь №${user.id} обновлён")
-                userChannel.send(user.updated())
+                userActions.update(user)
             }
         }
 
@@ -100,13 +95,13 @@ fun Application.configureRouting() {
             database.userQueries.user(id).executeAsOneOrNull()?.let { user ->
                 database.userQueries.delete(id)
                 call.respondText("Пользователь №$id удалён")
-                userChannel.send(user.deleted())
+                userActions.delete(user)
             }
         }
 
         // Подписаться на обновления таблицы user
         webSocket("/user") {
-            userChannel.consumeEach { action ->
+            userActions.flow.collect { action ->
                 sendSerialized(action)
             }
         }
