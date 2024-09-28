@@ -1,6 +1,7 @@
 package my.example.plugins
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import io.ktor.http.*
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -74,6 +75,8 @@ fun Application.configureRouting() {
         // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
         post("new") {
             val user = call.receive<User>()
+            if (database.userQueries.user(user.id).executeAsOneOrNull() != null)
+                return@post call.respond(HttpStatusCode.Conflict)
             database.userQueries.add(user)
             call.respondText("Пользователь №${user.id} добавлен")
             userActions.insert(user)
@@ -82,11 +85,14 @@ fun Application.configureRouting() {
         // При отправке json-объекта "User" на адрес /user данные пользователя обновляются
         post("user") {
             val user = call.receive<User>()
-            database.userQueries.user(user.id).executeAsOneOrNull()?.takeIf { it != user }?. let {
+            val old = database.userQueries.user(user.id).executeAsOneOrNull()
+            if (old == null)
+                return@post call.respond(HttpStatusCode.Gone)
+            else if (old == user)
+                return@post call.respond(HttpStatusCode.NoContent)
                 database.userQueries.update(user.name, user.id)
                 call.respondText("Пользователь №${user.id} обновлён")
                 userActions.update(user)
-            }
         }
 
         // При запросе удаления по адресу /user/№ пользователь удаляется из таблицы
