@@ -90,9 +90,9 @@ fun Application.configureRouting() {
                 return@post call.respond(HttpStatusCode.Gone)
             else if (old == user)
                 return@post call.respond(HttpStatusCode.NoContent)
-                database.userQueries.update(user.name, user.id)
-                call.respondText("Пользователь №${user.id} обновлён")
-                userActions.update(user)
+            database.userQueries.update(user.name, user.id)
+            call.respondText("Пользователь №${user.id} обновлён")
+            userActions.update(user)
         }
 
         // При запросе удаления по адресу /user/№ пользователь удаляется из таблицы
