@@ -1,11 +1,19 @@
 CREATE TABLE user (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT NOT NULL
+name TEXT NOT NULL,
+points INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX user_name ON user(name);
 
-INSERT INTO user VALUES (1, 'Иван Петров');
+INSERT INTO user VALUES
+(1, 'Davis Curtis', 2569),
+(2, 'Alena Donin', 1469),
+(3, 'Craig Gouse', 1053),
+(4, 'Madelyn Dias', 590),
+(5, 'Zain Vaccaro', 448),
+(6, 'Skylar Geidt', 448),
+(7, 'Justin Bator', 448);
 
 all:
 SELECT * FROM user;
@@ -22,7 +30,7 @@ add:
 INSERT INTO user VALUES ?;
 
 update:
-UPDATE user SET name=? WHERE id=?;
+UPDATE user SET name=?, points=? WHERE id=?;
 
 delete:
 DELETE FROM user WHERE id=?;

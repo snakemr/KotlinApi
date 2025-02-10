@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.http.*
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
+import io.ktor.server.http.content.staticFiles
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
@@ -17,6 +18,7 @@ import io.ktor.server.websocket.webSocket
 import my.example.Database
 import my.example.User
 import my.example.data.*
+import java.io.File
 
 fun Application.configureRouting() {
     val driver = JdbcSqliteDriver("jdbc:sqlite:database.s3db")
@@ -69,7 +71,7 @@ fun Application.configureRouting() {
             val name = call.receiveParameters()["name"] ?: return@post
             val id = database.userQueries.insert(name).executeAsOne()
             call.respondText("Пользователь №$id добавлен")
-            userActions.insert(User(id, name))
+            userActions.insert(User(id, name, 0))
         }
 
         // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
@@ -90,7 +92,7 @@ fun Application.configureRouting() {
                 return@post call.respond(HttpStatusCode.Gone)
             else if (old == user)
                 return@post call.respond(HttpStatusCode.NoContent)
-            database.userQueries.update(user.name, user.id)
+            database.userQueries.update(user.name, user.id, user.points)
             call.respondText("Пользователь №${user.id} обновлён")
             userActions.update(user)
         }
@@ -111,5 +113,7 @@ fun Application.configureRouting() {
                 sendSerialized(action)
             }
         }
+
+        staticFiles("/images", File("images"))
     }
 }
