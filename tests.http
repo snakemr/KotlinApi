@@ -14,11 +14,6 @@ Accept: text/plain
 DELETE http://localhost/user/999
 Accept: text/plain
 
-### POST new user name
-POST http://localhost/add
-Content-Type: application/x-www-form-urlencoded
-Accept: text/plain
-
 name = Сергей Сидоров
 
 ### POST new user
@@ -28,7 +23,11 @@ Accept: text/plain
 
 {
   "id": 999,
-  "name": "Пётр Иванов"
+  "name": "Пётр Иванов",
+  "points": 1000,
+  "clicks": 0,
+  "question": 0,
+  "answer": 0
 }
 
 ### POST updated user
@@ -38,7 +37,11 @@ Accept: text/plain
 
 {
   "id": 999,
-  "name": "Иван Петров"
+  "name": "Иван Петров",
+  "points": 2000,
+  "clicks": 0,
+  "question": 0,
+  "answer": 0
 }
 
 ### user realtime channel

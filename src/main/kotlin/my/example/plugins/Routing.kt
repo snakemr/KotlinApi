@@ -71,7 +71,7 @@ fun Application.configureRouting() {
             val name = call.receiveParameters()["name"] ?: return@post
             val id = database.userQueries.insert(name).executeAsOne()
             call.respondText("Пользователь №$id добавлен")
-            userActions.insert(User(id, name, 0))
+            userActions.insert(User(id, name, 0, 0, 0, 0))
         }
 
         // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
@@ -92,7 +92,9 @@ fun Application.configureRouting() {
                 return@post call.respond(HttpStatusCode.Gone)
             else if (old == user)
                 return@post call.respond(HttpStatusCode.NoContent)
-            database.userQueries.update(user.name, user.id, user.points)
+            database.userQueries.update(
+                user.name, user.points, user.clicks, user.question, user.answer,
+                user.id)
             call.respondText("Пользователь №${user.id} обновлён")
             userActions.update(user)
         }
@@ -112,6 +114,16 @@ fun Application.configureRouting() {
             userActions.flow.collect { action ->
                 sendSerialized(action)
             }
+        }
+
+        get("questions") {
+            val questions = database.quizQueries.questions().executeAsList()
+            call.respond(questions)
+        }
+        get("questions/{id}") {
+            val id = call.parameters["id"]?.toLongOrNull() ?: return@get
+            val answers = database.quizQueries.answers(id).executeAsList()
+            call.respond(answers)
         }
 
         staticFiles("/images", File("images"))
