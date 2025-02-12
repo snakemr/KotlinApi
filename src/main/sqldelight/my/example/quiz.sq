@@ -1,0 +1,36 @@
+CREATE TABLE quiz (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+quest INTEGER DEFAULT NULL,
+text TEXT NOT NULL,
+right INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX quiz_quest ON quiz(quest);
+
+INSERT INTO quiz VALUES
+(1, NULL, 'Who is owner of Facebook?', 0),
+(2, 1, 'Elon Mask', 0),
+(3, 1, 'Mark Zuckerberg', 1),
+(4, 1, 'Pavel Durov', 0),
+(5, 1, 'Jack Ma Yun', 0),
+(6, NULL, 'Who is owner of Tesla?', 0),
+(7, 6, 'Elon Mask', 1),
+(8, 6, 'Mark Zuckerberg', 0),
+(9, 6, 'Pavel Durov', 0),
+(10, 6, 'Jack Ma Yun', 0),
+(11, NULL, 'Who is owner of Telegram?', 0),
+(12, 11, 'Elon Mask', 0),
+(13, 11, 'Mark Zuckerberg', 0),
+(14, 11, 'Pavel Durov', 1),
+(15, 11, 'Jack Ma Yun', 0),
+(16, NULL, 'Who is owner of Alibaba?', 0),
+(17, 16, 'Elon Mask', 0),
+(18, 16, 'Mark Zuckerberg', 0),
+(19, 16, 'Pavel Durov', 0),
+(20, 16, 'Jack Ma Yun', 1);
+
+questions:
+SELECT * FROM quiz WHERE quest IS NULL;
+
+answers:
+SELECT * FROM quiz WHERE quest=?;
