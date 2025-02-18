@@ -41,20 +41,15 @@ Accept: text/plain
   "name": "Иван Петров"
 }
 
-### user realtime channel
-WEBSOCKET ws://localhost/user
-
-### user realtime channel 2
-WEBSOCKET ws://localhost/user
-
 ### Hello
 GET http://localhost/hello
-Cookie: user_session=id%3D%2523s6c9dd313-186f-4c39-a477-b0453e619391%26name%3D%2523sivan%2540mail.ru
+Cookie: user_session=id%3D%2523s17495132-9b33-45d0-8b29-7d1735a98a01%26name%3D%2523sivan%2540mail.ru
+Accept: application/json
 
 ### LOGIN
 POST http://localhost/login
 Content-Type: application/x-www-form-urlencoded
-Accept: text/plain
+Accept: application/json
 
 mail=ivan@mail.ru&pass=123
 
@@ -68,8 +63,13 @@ mail=ivan@mail.ru
 ### CHECK
 POST http://localhost/check
 Content-Type: application/x-www-form-urlencoded
-Accept: text/plain
+Accept: application/json
 
-mail=ivan@mail.ru&otp=4899
+mail=ivan@mail.ru&otp=3593
+
+### LOGOUT
+POST http://localhost/logout
+Cookie: user_session=id%3D%2523s17495132-9b33-45d0-8b29-7d1735a98a01%26name%3D%2523sivan%2540mail.ru
+Accept: text/plain
 
 ###

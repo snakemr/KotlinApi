@@ -11,7 +11,11 @@ import io.ktor.server.sessions.*
 import io.ktor.util.pipeline.*
 import my.example.Database
 import my.example.data.UserSession
+import java.awt.Font
 import java.util.*
+import javax.swing.BorderFactory
+import javax.swing.JFrame
+import javax.swing.JLabel
 import kotlin.random.Random
 
 fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) = routing {
@@ -22,14 +26,11 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
             database.userQueries.all().executeAsList()
             call.respondText(
                 """API готов к работе.
-                    |GET users: Вывод всех пользователей (json)
-                    |GET user/№: Вывод пользователя № (json)
-                    |GET name?id=№: Вывод имени пользователя №
+                    |GET hello: Вывод профиля пользователя (требуется авторизация)
                     |POST otp: Отправка кода OTP (поле формы mail)
                     |POST check: Авторизация пользователя по коду OTP (поля формы mail и otp)
                     |POST login: Авторизация пользователя по паролю (поля формы mail и pass)
-                    |POST new: Добавить пользователя (json)
-                    |DELETE user/№: Удалить пользователя №
+                    |POST logout: Выход из системы
                 """.trimMargin()
             )
         } catch (_: Exception) {
@@ -82,6 +83,16 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
         val otp = Random.nextLong(1000, 10000)
         database.userQueries.otp(otp, mail)
         call.respondText("OTP code was sent")
+        JFrame("OTP code verification").apply {
+            JLabel("OPT code for $mail: $otp").apply {
+                font = Font("Serif", Font.BOLD, 20)
+                border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            }.let(::add)
+            pack()
+            isLocationByPlatform = true
+            isAlwaysOnTop = true
+            isVisible = true
+        }
     }
 
     suspend fun PipelineContext<Unit, ApplicationCall>.login() {
@@ -89,7 +100,8 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
         val uuid = UUID.randomUUID().toString()
         database.userQueries.session(uuid, userName)
         call.sessions.set(UserSession(userName, uuid))
-        call.respondText("Hello")
+        val user = database.userQueries.user(userName).executeAsOneOrNull() ?: return
+        call.respond(user)
     }
 
     authenticate("auth-form") {
@@ -106,8 +118,15 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
 
     authenticate("auth-session") {
         get("/hello") {
-            val userSession = call.principal<UserSession>()
-            call.respondText("Hello, ${userSession?.name}!")
+            val session = call.principal<UserSession>() ?: return@get
+            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@get
+            call.respond(user)
+        }
+
+        post("/logout") {
+            val session = call.principal<UserSession>()
+            if (session != null) database.userQueries.logout(session.name)
+            call.respondText("Goodbye, ${session?.name}!")
         }
     }
 }
