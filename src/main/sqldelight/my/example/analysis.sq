@@ -1,0 +1,23 @@
+CREATE TABLE analysis (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+user INTEGER NOT NULL,
+description TEXT NOT NULL,
+date INTEGER NOT NULL,
+FOREIGN KEY (user) REFERENCES user(id)
+);
+
+INSERT INTO analysis (user, description, date) VALUES
+(1, "Анализ походки", 1739882223),
+(1, "Сердцебиение", 1739882236),
+(1, "Анализ 2", 1739882242),
+(1, "Анализ крови", 1739882247),
+(1, "Результат ПЦР", 1739882253),
+(1, "Сертификат вакцинации от COVID-2019", 1739882259);
+
+all:
+SELECT description, datetime(date, 'unixepoch') FROM analysis WHERE user=?;
+
+insert {
+INSERT INTO analysis(user, description, date) VALUES (?, ?, strftime('%s', 'now'));
+SELECT last_insert_rowid();
+}

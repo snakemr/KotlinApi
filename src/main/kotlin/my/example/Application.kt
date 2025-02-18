@@ -32,7 +32,7 @@ fun Application.module() {
     install(Sessions) {
         cookie<UserSession>("user_session") {
             cookie.path = "/"
-            cookie.maxAgeInSeconds = 60
+            cookie.maxAgeInSeconds = 3600
         }
     }
 

@@ -1,32 +1,15 @@
 CREATE TABLE history (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
 user INTEGER NOT NULL,
-description TEXT NOT NULL
+description TEXT NOT NULL,
+date INTEGER NOT NULL,
+FOREIGN KEY (user) REFERENCES user(id)
 );
 
-CREATE INDEX user_mail ON user(mail);
-
-INSERT INTO user (name, mail, pass) VALUES ('Иван Петров', 'ivan@mail.ru', '123');
-
 all:
-SELECT * FROM user;
-
-user:
-SELECT * FROM user WHERE mail=?;
+SELECT description, datetime(date, 'unixepoch') FROM history WHERE user=?;
 
 insert {
-INSERT INTO user(name, mail, pass) VALUES (?, ?, ?);
+INSERT INTO history(user, description, date) VALUES (?, ?, strftime('%s', 'now'));
 SELECT last_insert_rowid();
 }
-
-add:
-INSERT INTO user VALUES ?;
-
-session:
-UPDATE user SET otp=NULL, session=? WHERE mail=?;
-
-otp:
-UPDATE user SET otp=? WHERE mail=?;
-
-logout:
-UPDATE user SET otp=NULL, session=NULL WHERE mail=?;

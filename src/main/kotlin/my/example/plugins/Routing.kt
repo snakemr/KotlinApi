@@ -27,6 +27,9 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
             call.respondText(
                 """API готов к работе.
                     |GET hello: Вывод профиля пользователя (требуется авторизация)
+                    |GET analysis: Вывод списка анализов (требуется авторизация)
+                    |GET history: Вывод истории (требуется авторизация)
+                    |POST history: Добавление записи в историю (поле формы new, требуется авторизация)
                     |POST otp: Отправка кода OTP (поле формы mail)
                     |POST check: Авторизация пользователя по коду OTP (поля формы mail и otp)
                     |POST login: Авторизация пользователя по паролю (поля формы mail и pass)
@@ -38,42 +41,6 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
             call.respondText("База данных успешно создана")
         }
     }
-
-    // При обращении к /users выдаётся полный список пользователей в виде JSON
-    get("users") {
-        val users = database.userQueries.all().executeAsList()
-        call.respond(users)
-    }
-
-    // При обращении к /user/№ выдаётся объект "пользователь" виде JSON
-    get("user/{mail}") {
-        val mail = call.parameters["mail"] ?: return@get
-        val user = database.userQueries.user(mail).executeAsOneOrNull()
-        if (user != null) call.respond(user)
-    }
-
-    // При обращении к /name?id=№ выдаётся имя пользователя
-    get("name") {
-        val mail = call.request.queryParameters["mail"] ?: return@get
-        val user = database.userQueries.user(mail).executeAsOneOrNull()
-        if (user != null) call.respondText(user.name)
-    }
-
-    // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
-//    post("add") {
-//        val name = call.receiveParameters()["name"] ?: return@post
-//        val id = database.userQueries.insert(name, "").executeAsOne()
-//        call.respondText("Пользователь №$id добавлен")
-//    }
-
-    // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
-//    post("new") {
-//        val user = call.receive<User>()
-//        if (database.userQueries.user(user.id).executeAsOneOrNull() != null)
-//            return@post call.respond(HttpStatusCode.Conflict)
-//        database.userQueries.add(user)
-//        call.respondText("Пользователь №${user.id} добавлен")
-//    }
 
     post("otp") {
         val params = call.receiveParameters()
@@ -117,10 +84,34 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
     }
 
     authenticate("auth-session") {
+
         get("/hello") {
             val session = call.principal<UserSession>() ?: return@get
             val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@get
             call.respond(user)
+        }
+
+        get("/analysis") {
+            val session = call.principal<UserSession>() ?: return@get
+            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@get
+            val history = database.analysisQueries.all(user.id).executeAsList()
+            call.respond(history)
+        }
+
+        get("/history") {
+            val session = call.principal<UserSession>() ?: return@get
+            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@get
+            val history = database.historyQueries.all(user.id).executeAsList()
+            call.respond(history)
+        }
+
+        post("/history") {
+            val new = call.receiveParameters()["new"] ?: return@post
+            val session = call.principal<UserSession>() ?: return@post
+            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@post
+            database.historyQueries.insert(user.id, new).executeAsOne()
+            val history = database.historyQueries.all(user.id).executeAsList()
+            call.respond(history)
         }
 
         post("/logout") {
@@ -128,5 +119,6 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
             if (session != null) database.userQueries.logout(session.name)
             call.respondText("Goodbye, ${session?.name}!")
         }
+
     }
 }
