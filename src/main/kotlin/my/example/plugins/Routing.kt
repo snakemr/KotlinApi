@@ -62,12 +62,16 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
         }
     }
 
-    suspend fun PipelineContext<Unit, ApplicationCall>.login() {
+    suspend fun PipelineContext<Unit, ApplicationCall>.login(reset: Boolean = true) {
         val userName = call.principal<UserIdPrincipal>()?.name.toString()
-        val uuid = UUID.randomUUID().toString()
-        database.userQueries.session(uuid, userName)
-        call.sessions.set(UserSession(userName, uuid))
         val user = database.userQueries.user(userName).executeAsOneOrNull() ?: return
+        if (reset) {
+            val uuid = UUID.randomUUID().toString()
+            database.userQueries.session(uuid, userName)
+            call.sessions.set(UserSession(userName, uuid))
+        } else user.session?.let {
+            call.sessions.set(UserSession(userName, it))
+        }
         call.respond(user)
     }
 
@@ -80,6 +84,12 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
     authenticate("otp-form") {
         post("/check") {
             login()
+        }
+    }
+
+    authenticate("session-form") {
+        post("/hello") {
+            login(reset = false)
         }
     }
 

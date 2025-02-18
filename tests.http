@@ -1,46 +1,3 @@
-### GET users
-GET http://localhost/users
-Accept: application/json
-
-### GET user
-GET http://localhost/user/999
-Accept: application/json
-
-### GET name
-GET http://localhost/name?id=999
-Accept: text/plain
-
-### DELETE user
-DELETE http://localhost/user/999
-Accept: text/plain
-
-### POST new user name
-POST http://localhost/add
-Content-Type: application/x-www-form-urlencoded
-Accept: text/plain
-
-name = Сергей Сидоров
-
-### POST new user
-POST http://localhost/new
-Content-Type: application/json
-Accept: text/plain
-
-{
-  "id": 999,
-  "name": "Пётр Иванов"
-}
-
-### POST updated user
-POST http://localhost/user
-Content-Type: application/json
-Accept: text/plain
-
-{
-  "id": 999,
-  "name": "Иван Петров"
-}
-
 ### LOGIN
 POST http://localhost/login
 Content-Type: application/x-www-form-urlencoded
@@ -67,9 +24,16 @@ POST http://localhost/logout
 Cookie: user_session=id%3D%2523s3e8f50a8-630a-4a11-b412-b12f799272e4%26name%3D%2523sivan%2540mail.ru
 Accept: text/plain
 
+### HELLO first
+POST http://localhost/hello
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+mail=ivan@mail.ru&session=30184b71-7c15-4a66-8123-ac0884a08759
+
 ### Hello
 GET http://localhost/hello
-Cookie: user_session=id%3D%2523s3e8f50a8-630a-4a11-b412-b12f799272e4%26name%3D%2523sivan%2540mail.ru
+Cookie: user_session=id%3D%2523s30184b71-7c15-4a66-8123-ac0884a08759%26name%3D%2523sivan%2540mail.ru
 Accept: application/json
 
 ### History

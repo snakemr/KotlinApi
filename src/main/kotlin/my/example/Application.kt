@@ -65,6 +65,20 @@ fun Application.module() {
             }
         }
 
+        form("session-form") {
+            userParamName = "mail"
+            passwordParamName = "session"
+            validate { credentials ->
+                val user = database.userQueries.user(credentials.name).executeAsOneOrNull()
+                if (user?.session == credentials.password)
+                    UserIdPrincipal(credentials.name)
+                else null
+            }
+            challenge {
+                call.respond(HttpStatusCode.Unauthorized, "mail or session id are not valid")
+            }
+        }
+
         session<UserSession>("auth-session") {
             validate { session ->
                 val user = database.userQueries.user(session.name).executeAsOneOrNull()
