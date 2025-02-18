@@ -47,4 +47,29 @@ WEBSOCKET ws://localhost/user
 ### user realtime channel 2
 WEBSOCKET ws://localhost/user
 
+### Hello
+GET http://localhost/hello
+Cookie: user_session=id%3D%2523s6c9dd313-186f-4c39-a477-b0453e619391%26name%3D%2523sivan%2540mail.ru
+
+### LOGIN
+POST http://localhost/login
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+mail=ivan@mail.ru&pass=123
+
+### OTP
+POST http://localhost/otp
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+mail=ivan@mail.ru
+
+### CHECK
+POST http://localhost/check
+Content-Type: application/x-www-form-urlencoded
+Accept: text/plain
+
+mail=ivan@mail.ru&otp=4899
+
 ###

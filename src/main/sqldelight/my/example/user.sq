@@ -1,28 +1,35 @@
 CREATE TABLE user (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT NOT NULL
+name TEXT NOT NULL,
+mail TEXT NOT NULL,
+pass TEXT NOT NULL,
+session TEXT DEFAULT NULL,
+otp INTEGER DEFAULT 0
 );
 
-CREATE INDEX user_name ON user(name);
+CREATE INDEX user_mail ON user(mail);
 
-INSERT INTO user VALUES (1, 'Иван Петров');
+INSERT INTO user (name, mail, pass) VALUES ('Иван Петров', 'ivan@mail.ru', '123');
 
 all:
 SELECT * FROM user;
 
 user:
-SELECT * FROM user WHERE id=?;
+SELECT * FROM user WHERE mail=?;
 
 insert {
-INSERT INTO user(name) VALUES (?);
+INSERT INTO user(name, mail, pass) VALUES (?, ?, ?);
 SELECT last_insert_rowid();
 }
 
 add:
 INSERT INTO user VALUES ?;
 
-update:
-UPDATE user SET name=? WHERE id=?;
+session:
+UPDATE user SET session=? WHERE mail=?;
+
+otp:
+UPDATE user SET otp=? WHERE mail=?;
 
 delete:
 DELETE FROM user WHERE id=?;
