@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.http.content.staticFiles
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -12,6 +13,7 @@ import io.ktor.util.pipeline.*
 import my.example.Database
 import my.example.data.UserSession
 import java.awt.Font
+import java.io.File
 import java.util.*
 import javax.swing.BorderFactory
 import javax.swing.JFrame
@@ -68,11 +70,12 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
         if (reset) {
             val uuid = UUID.randomUUID().toString()
             database.userQueries.session(uuid, userName)
-            call.sessions.set(UserSession(userName, uuid))
+            call.sessions.set(UserSession(user.id, uuid))
+            call.respond(user.copy(session = uuid))
         } else user.session?.let {
-            call.sessions.set(UserSession(userName, it))
+            call.sessions.set(UserSession(user.id, it))
+            call.respond(user)
         }
-        call.respond(user)
     }
 
     authenticate("auth-form") {
@@ -97,38 +100,37 @@ fun Application.configureRouting(driver: JdbcSqliteDriver, database: Database) =
 
         get("/hello") {
             val session = call.principal<UserSession>() ?: return@get
-            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@get
+            val user = database.userQueries.get(session.u).executeAsOneOrNull() ?: return@get
             call.respond(user)
         }
 
         get("/analysis") {
             val session = call.principal<UserSession>() ?: return@get
-            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@get
-            val history = database.analysisQueries.all(user.id).executeAsList()
+            val history = database.analysisQueries.all(session.u).executeAsList()
             call.respond(history)
         }
 
         get("/history") {
             val session = call.principal<UserSession>() ?: return@get
-            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@get
-            val history = database.historyQueries.all(user.id).executeAsList()
+            val history = database.historyQueries.all(session.u).executeAsList()
             call.respond(history)
         }
 
         post("/history") {
             val new = call.receiveParameters()["new"] ?: return@post
             val session = call.principal<UserSession>() ?: return@post
-            val user = database.userQueries.user(session.name).executeAsOneOrNull() ?: return@post
-            database.historyQueries.insert(user.id, new).executeAsOne()
-            val history = database.historyQueries.all(user.id).executeAsList()
+            database.historyQueries.insert(session.u, new).executeAsOne()
+            val history = database.historyQueries.all(session.u).executeAsList()
             call.respond(history)
         }
 
         post("/logout") {
             val session = call.principal<UserSession>()
-            if (session != null) database.userQueries.logout(session.name)
-            call.respondText("Goodbye, ${session?.name}!")
+            if (session != null) database.userQueries.logout(session.u)
+            call.respondText("Goodbye!")
         }
 
     }
+
+    staticFiles("images", File("images"))
 }

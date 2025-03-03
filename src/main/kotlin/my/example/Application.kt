@@ -81,8 +81,8 @@ fun Application.module() {
 
         session<UserSession>("auth-session") {
             validate { session ->
-                val user = database.userQueries.user(session.name).executeAsOneOrNull()
-                if (session.id == user?.session) session else null
+                val user = database.userQueries.get(session.u).executeAsOneOrNull()
+                if (session.i == user?.session) session else null
             }
             challenge {
                 call.respond(HttpStatusCode.Unauthorized, "Authorization needed")

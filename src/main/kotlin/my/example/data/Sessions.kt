@@ -4,4 +4,4 @@ import io.ktor.server.auth.*
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class UserSession(val name: String, val id: String) : Principal
+data class UserSession(val u: Long, val i: String) : Principal

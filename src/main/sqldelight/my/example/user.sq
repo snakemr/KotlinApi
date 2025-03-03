@@ -14,6 +14,9 @@ INSERT INTO user (name, mail, pass) VALUES ('Иван Петров', 'ivan@mail.
 all:
 SELECT * FROM user;
 
+get:
+SELECT * FROM user WHERE id=?;
+
 user:
 SELECT * FROM user WHERE mail=?;
 
@@ -32,4 +35,4 @@ otp:
 UPDATE user SET otp=? WHERE mail=?;
 
 logout:
-UPDATE user SET otp=NULL, session=NULL WHERE mail=?;
+UPDATE user SET otp=NULL, session=NULL WHERE id=?;
