@@ -3,13 +3,14 @@ id INTEGER PRIMARY KEY AUTOINCREMENT,
 name TEXT NOT NULL,
 mail TEXT NOT NULL,
 pass TEXT NOT NULL,
+logo TEXT NOT NULL,
 session TEXT DEFAULT NULL,
 otp INTEGER DEFAULT 0
 );
 
 CREATE UNIQUE INDEX user_mail ON user(mail);
 
-INSERT INTO user (name, mail, pass) VALUES ('Иван Петров', 'ivan@mail.ru', '123');
+INSERT INTO user (name, mail, pass, logo) VALUES ('Иван Петров', 'ivan@mail.ru', '123', '1.png');
 
 all:
 SELECT * FROM user;
@@ -21,7 +22,7 @@ user:
 SELECT * FROM user WHERE mail=?;
 
 insert {
-INSERT INTO user(name, mail, pass) VALUES (?, ?, ?);
+INSERT INTO user(name, mail, pass, logo) VALUES (?, ?, ?, ?);
 SELECT last_insert_rowid();
 }
 

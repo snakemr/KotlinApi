@@ -29,7 +29,7 @@ POST http://localhost/hello
 Content-Type: application/x-www-form-urlencoded
 Accept: application/json
 
-mail=ivan@mail.ru&session=054bc595-db67-40ee-aef0-ceb1f0ef1877
+mail=ivan@mail.ru&session=92d60335-389b-4263-b203-89df7340a6a0
 
 ### Hello
 GET http://localhost/hello
@@ -38,17 +38,17 @@ Accept: application/json
 
 ### Analysis
 GET http://localhost/analysis
-Cookie: user_session=i%3D%2523s054bc595-db67-40ee-aef0-ceb1f0ef1877%26u%3D%2523l1
+Cookie: user_session=i%3D%2523s92d60335-389b-4263-b203-89df7340a6a0%26u%3D%2523l1
 Accept: application/json
 
 ### History
 GET http://localhost/history
-Cookie: user_session=i%3D%2523s054bc595-db67-40ee-aef0-ceb1f0ef1877%26u%3D%2523l1
+Cookie: user_session=i%3D%2523sf5d4cbfa-553d-4c96-8c42-014ee7d73644%26u%3D%2523l1
 Accept: application/json
 
 ### History
 POST http://localhost/history
-Cookie: user_session=i%3D%2523s054bc595-db67-40ee-aef0-ceb1f0ef1877%26u%3D%2523l1
+Cookie: user_session=i%3D%2523sf5d4cbfa-553d-4c96-8c42-014ee7d73644%26u%3D%2523l1
 Content-Type: application/x-www-form-urlencoded
 Accept: application/json
 
