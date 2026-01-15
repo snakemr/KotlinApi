@@ -2,6 +2,7 @@ package my.example.plugins
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import io.ktor.server.application.Application
+import io.ktor.server.plugins.swagger.swaggerUI
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
@@ -35,6 +36,11 @@ fun Application.configureRouting() {
                 Database.Schema.create(driver)
                 call.respondText("База данных успешно создана")
             }
+        }
+
+        swaggerUI(path = "swagger", swaggerFile = "openapi/api.yaml") {
+            println(version)
+            // Optional: Customize Swagger UI settings here
         }
 
         // При обращении к /users выдаётся полный список пользователей в виде JSON
