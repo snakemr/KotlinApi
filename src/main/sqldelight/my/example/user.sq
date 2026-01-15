@@ -1,23 +1,25 @@
 CREATE TABLE user (
 id INTEGER PRIMARY KEY AUTOINCREMENT,
-name TEXT NOT NULL
+firstname TEXT NOT NULL,
+lastname TEXT NOT NULL,
+secondname TEXT NOT NULL,
+datebirthday TEXT NOT NULL,
+gender TEXT NOT NULL,
+email TEXT UNIQUE NOT NULL,
+password TEXT NOT NULL
 );
 
-CREATE INDEX user_name ON user(name);
+add:
+INSERT INTO user VALUES ?;
 
-INSERT INTO user VALUES (1, 'Иван Петров');
+last:
+SELECT max(id) last FROM user;
 
 all:
 SELECT * FROM user;
 
 user:
 SELECT * FROM user WHERE id=?;
-
-insert:
-INSERT INTO user(name) VALUES (?);
-
-add:
-INSERT INTO user VALUES ?;
 
 delete:
 DELETE FROM user WHERE id=?;

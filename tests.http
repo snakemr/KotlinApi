@@ -22,13 +22,19 @@ Accept: text/plain
 name = Сергей Сидоров
 
 ### POST new user
-POST http://localhost/new
+POST http://localhost/collections/users/records
 Content-Type: application/json
-Accept: text/plain
+Accept: application/json
 
 {
-  "id": 999,
-  "name": "Пётр Иванов"
+  "id": 0,
+  "firstname": "Пётр",
+  "lastname": "Иванов",
+  "secondname": "Петрович",
+  "datebirthday": "1999-01-01",
+  "gender": "мужской",
+  "email": "ivanov@matule.ru",
+  "password": "123456"
 }
 
 ###

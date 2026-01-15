@@ -1,16 +1,12 @@
 package my.example.plugins
 
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
-import io.ktor.server.application.Application
-import io.ktor.server.plugins.swagger.swaggerUI
-import io.ktor.server.request.receive
-import io.ktor.server.request.receiveParameters
-import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.delete
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
-import io.ktor.server.routing.routing
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.swagger.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import my.example.Database
 import my.example.User
 
@@ -25,12 +21,7 @@ fun Application.configureRouting() {
             try {
                 database.userQueries.all().executeAsList()
                 call.respondText("""API готов к работе.
-                    |GET users: Вывод всех пользователей (json)
-                    |GET user/№: Вывод пользователя № (json)
-                    |GET name?id=№: Вывод имени пользователя №
-                    |POST add: Добавить пользователя (поле name)
-                    |POST new: Добавить пользователя (json)
-                    |DELETE user/№: Удалить пользователя №
+                    |POST /collections/users/records: Добавить пользователя (json)
                 """.trimMargin())
             } catch (_: Exception) {
                 Database.Schema.create(driver)
@@ -42,6 +33,19 @@ fun Application.configureRouting() {
             println(version)
             // Optional: Customize Swagger UI settings here
         }
+
+        // При отправке json-объекта "User" пользователь добавляется в таблицу
+        post("/collections/users/records") {
+            runCatching {
+                val last = database.userQueries.last().executeAsOne().last ?: 0
+                val user = call.receive<User>().copy(id = last + 1)
+                database.userQueries.add(user)
+                call.respond(user)
+            }.onFailure {
+                call.error("Failed to create record.")
+            }
+        }
+        ///////////////////
 
         // При обращении к /users выдаётся полный список пользователей в виде JSON
         get("users") {
@@ -56,27 +60,6 @@ fun Application.configureRouting() {
             if (user != null) call.respond(user)
         }
 
-        // При обращении к /name?id=№ выдаётся имя пользователя
-        get("name") {
-            val id = call.request.queryParameters["id"]?.toLongOrNull() ?: return@get
-            val user = database.userQueries.user(id).executeAsOneOrNull()
-            if (user != null) call.respondText(user.name)
-        }
-
-        // При отправке поля "name" на адрес /add пользователь добавляется в таблицу
-        post("add") {
-            val name = call.receiveParameters()["name"] ?: return@post
-            database.userQueries.insert(name)
-            call.respondText("Пользователь добавлен")
-        }
-
-        // При отправке json-объекта "User" на адрес /new пользователь добавляется в таблицу
-        post("new") {
-            val user = call.receive<User>()
-            database.userQueries.add(user)
-            call.respondText("Пользователь добавлен")
-        }
-
         // При запросе удаления по адресу /user/№ пользователь удаляется из таблицы
         delete("user/{id}") {
             val id = call.parameters["id"]?.toLongOrNull() ?: return@delete
@@ -85,3 +68,9 @@ fun Application.configureRouting() {
         }
     }
 }
+
+private suspend fun ApplicationCall.error(message: String) = respond(HttpStatusCode.BadRequest, ErrorResponse(
+    400, message, object {}
+))
+
+private class ErrorResponse(val status: Int, val message: String, val data: Any?)

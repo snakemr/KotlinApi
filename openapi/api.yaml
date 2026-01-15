@@ -8,7 +8,7 @@ info:
     email: hello@world.ru
   version: 1.0.00
 servers:
-  - url: https://api.matule.ru/api
+  - url: http://localhost:80
 tags:
   - name: user
     description: Действия с пользователем
