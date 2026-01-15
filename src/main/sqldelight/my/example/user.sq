@@ -15,11 +15,14 @@ INSERT INTO user VALUES ?;
 last:
 SELECT max(id) last FROM user;
 
-all:
-SELECT * FROM user;
-
 user:
 SELECT * FROM user WHERE id=?;
+
+auth:
+SELECT * FROM user WHERE email=? AND password=?;
+
+all:
+SELECT * FROM user;
 
 delete:
 DELETE FROM user WHERE id=?;

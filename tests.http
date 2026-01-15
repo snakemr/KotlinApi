@@ -1,25 +1,6 @@
-### GET users
-GET http://localhost/users
-Accept: application/json
-
 ### GET user
-GET http://localhost/user/999
+GET http://localhost/collections/users/records/1
 Accept: application/json
-
-### GET name
-GET http://localhost/name?id=999
-Accept: text/plain
-
-### DELETE user
-DELETE http://localhost/user/999
-Accept: text/plain
-
-### POST new user name
-POST http://localhost/add
-Content-Type: application/x-www-form-urlencoded
-Accept: text/plain
-
-name = Сергей Сидоров
 
 ### POST new user
 POST http://localhost/collections/users/records
@@ -34,6 +15,16 @@ Accept: application/json
   "datebirthday": "1999-01-01",
   "gender": "мужской",
   "email": "ivanov@matule.ru",
+  "password": "123456"
+}
+
+### AUTH
+POST http://localhost/collections/users/auth-with-password
+Content-Type: application/json
+Accept: application/json
+
+{
+  "identity": "ivanov@matule.ru",
   "password": "123456"
 }
 
